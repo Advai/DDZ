@@ -1,0 +1,15 @@
+plugins {
+  id 'org.springframework.boot' version '3.3.3'
+  id 'io.spring.dependency-management' version '1.1.6'
+  id 'java'
+}
+dependencies {
+  implementation project(':engine')
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'org.springframework.boot:spring-boot-starter-websocket'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+tasks.named('test'){ useJUnitPlatform() }
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+bootJar { archiveFileName = 'doudizhu-server.jar' }

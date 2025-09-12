@@ -1,29 +1,18 @@
-# Dou Dizhu (Starter Monorepo)
+# Dou Dizhu — Spring Boot Server + Engine (Starter)
 
-This is a minimal **Gradle multi-module** starter focused on the **Java game engine** only.
-You can push this repo to GitHub and iterate from here.
+Multi-module Gradle project: headless `engine` + Spring Boot `server`.
 
-## Layout
+## Build & Run
 ```
-doudizhu/
-├─ build.gradle                # root conventions
-├─ settings.gradle             # includes :engine
-└─ engine/
-   ├─ build.gradle
-   └─ src/main/java/com/yourco/ddz/engine/...
+./gradlew build
+./gradlew :server:bootRun
 ```
-
-## Quick start
-```bash
-# from doudizhu/
-gradle -v             # ensure Gradle (8+) is installed or use ./gradlew if you add wrapper
-./gradlew build       # or: gradle build
-./gradlew :engine:test
-./gradlew :engine:run # runs DemoMain
+Create a game:
 ```
-
-> If you prefer **IntelliJ IDEA**, just open the `doudizhu` folder and it will import as a Gradle project.
-
-## Next steps
-- Replace the placeholder `DemoRules` with real Dou Dizhu rules & scoring.
-- Split modules later (e.g., `server`, `protocol`) without touching engine purity.
+curl -X POST http://localhost:8080/api/games
+```
+Connect WebSocket (replace {id}):
+```
+# e.g., with wscat
+wscat -c ws://localhost:8080/ws/game/{id}
+```

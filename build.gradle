@@ -1,24 +1,8 @@
-plugins {
-    id("com.diffplug.spotless") version "7.0.0" apply false
-}
-
+plugins { id("com.diffplug.spotless") version "7.0.0" apply false }
 subprojects {
-    apply plugin: "java"
-
-    java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(21)
-        }
-    }
-
-    repositories {
-        mavenCentral()
-    }
-
-    group = "com.yourco.ddz"
-    version = "0.1.0-SNAPSHOT"
-
-    tasks.withType(Test).configureEach {
-        useJUnitPlatform()
-    }
+  apply plugin: "java"
+  java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+  repositories { mavenCentral() }
+  group = "com.yourco.ddz"; version = "0.1.0-SNAPSHOT"
+  tasks.withType(Test).configureEach { useJUnitPlatform() }
 }

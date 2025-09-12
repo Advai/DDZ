@@ -1,12 +1,2 @@
-plugins {
-    id 'java-library'
-    id 'application'
-}
-
-dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
-}
-
-application {
-    mainClass = 'com.yourco.ddz.engine.demo.DemoMain'
-}
+plugins { id 'java-library' }
+dependencies { testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3' }
