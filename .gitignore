@@ -1,0 +1,32 @@
+# Build
+/build/
+/out/
+/target/
+
+# Gradle
+.gradle/
+/gradle-app.setting
+
+# Keep wrapper JAR but ignore other wrapper files if you want
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+/bin/
+/.vscode/
+
+# Logs & temp
+*.log
+logs/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
