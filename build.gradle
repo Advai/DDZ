@@ -6,7 +6,7 @@ subprojects {
   java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
   repositories { mavenCentral() }
   group = "com.yourco.ddz"; version = "0.1.0-SNAPSHOT"
-  tasks.withType(Test).configureEach { useJUnitPlatform() }
+//  tasks.withType(Test).configureEach { useJUnitPlatform() }
 
   apply plugin: "com.diffplug.spotless"
   spotless {

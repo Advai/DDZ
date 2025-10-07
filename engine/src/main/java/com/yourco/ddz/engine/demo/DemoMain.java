@@ -9,7 +9,9 @@ public class DemoMain {
   public static void main(String[] args) {
     // Init engine
     List<UUID> players = List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
-    Rules rules = DdzRules3p.withStubs(); // uses SimplePlayDetector/Comparator stubs
+    Rules rules =
+        com.yourco.ddz.engine.demo.DdzRules3p
+            .withStubs(); // uses SimplePlayDetector/Comparator stubs
     GameState state = new GameState("g-1", players);
     GameLoop loop = new GameLoop(rules, state);
 
@@ -19,7 +21,7 @@ public class DemoMain {
 
     // Force bidding to 3 so we enter PLAY with the current player as landlord
     if (state.phase() == GameState.Phase.BIDDING) {
-      loop.submit(new PlayerAction(state.currentPlayerId(), "BID", new Bid(3)));
+      loop.submit(new PlayerAction(state.currentPlayerId(), "BID", new Object()));
       loop.tick();
     }
 

@@ -1,9 +1,42 @@
 package com.yourco.ddz.engine.core;
 
+import com.yourco.ddz.engine.cards.Card;
 import java.time.Instant;
 import java.util.*;
 
 public final class GameState {
+  public PlayedHand getCurrentLead() {
+    ArrayList<Card> cards = new ArrayList<Card>();
+    cards.add(new Card(Card.Suit.CLUBS, Card.Rank.THREE));
+    return new PlayedHand(ComboType.SINGLE, cards, 1, 1);
+  }
+
+  public List<Card> handOf(UUID uuid) {
+    return new ArrayList<>();
+  }
+
+  public void setLandlordId(UUID landlord) {}
+
+  public void setCurrentLead(Object o) {}
+
+  public void setCurrentLeadPlayer(Object o) {}
+
+  public void setPassesInRow(int i) {}
+
+  public void setBottom(List<Card> cards) {}
+
+  public Collection<Card> bottom() {
+    return new ArrayList<Card>();
+  }
+
+  public int passesInRow() {
+    return 0;
+  }
+
+  public Object getCurrentLeadPlayer() {
+    return new Object();
+  }
+
   public enum Phase {
     LOBBY,
     DEAL,
