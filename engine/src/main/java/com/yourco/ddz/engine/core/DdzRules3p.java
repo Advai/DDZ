@@ -123,6 +123,7 @@ public final class DdzRules3p implements Rules {
 
     // Terminal: hand empty
     if (s.handOf(pa.playerId()).size() == 0) {
+      System.out.println("Player " + pa + " won!");
       s.setPhase(GameState.Phase.TERMINATED);
       return;
     }
@@ -143,6 +144,7 @@ public final class DdzRules3p implements Rules {
       s.setCurrentLead(null);
       s.setCurrentLeadPlayer(null);
       s.setPassesInRow(0);
+      System.out.println("Round over. Winner is " + s.players().get(s.currentPlayerIndex()));
     }
   }
 
@@ -166,12 +168,10 @@ public final class DdzRules3p implements Rules {
 
     if (value == 0) {
       onPass(s);
-      return;
     }
 
     if (value == 3) {
       s.setLandlordId(pa.playerId());
-      return;
     }
 
     s.nextPlayer();

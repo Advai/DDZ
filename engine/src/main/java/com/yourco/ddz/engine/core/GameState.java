@@ -26,6 +26,7 @@ public final class GameState {
 
   public void setCurrentLead(PlayedHand p) {
     if (p == null) {
+      this.currentLead = null;
       return;
     }
     Collections.sort(p.cards(), Comparator.comparing(Card::rank));
@@ -78,7 +79,6 @@ public final class GameState {
   private int currentPlayerIndex;
   private Instant updatedAt;
   private int pass_count;
-  private java.util.UUID landlordId;
   private PlayedHand currentLead;
   private java.util.UUID currentLeadPlayer;
 

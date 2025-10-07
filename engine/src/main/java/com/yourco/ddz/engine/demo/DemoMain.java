@@ -39,21 +39,23 @@ public class DemoMain {
 
       numPlayersBid++;
     }
-
+    System.out.println("Current player is " + state.getCurrentLeadPlayer());
     System.out.println("Landlord is " + state.getLandlordId());
 
     // PLAY loop: submit next action for the current player, tick, repeat
     // NOTE: With detector stubbed, any non-null card list will be invalid.
     // This loop is the structure you’ll keep; plug real move selection once detector works.
     state.setPhase(GameState.Phase.PLAY);
-    for (UUID pid : state.players()) {
+    while (!rules.isTerminal(state)) {
+      UUID pid = state.currentPlayerId();
+      //    for (UUID pid : state.players()) {
       // UUID pid = state.currentPlayerId();
 
       // Decide the move to submit:
       // - null payload = PASS (allowed only if there is a current lead)
       // - List<Card> payload = attempt a play (requires a working detector)
       List<Card> move = chooseNextMove(state, pid);
-      //      System.out.println("Player " + pid + " plays " + move);
+      System.out.println("Player " + pid + " plays " + move);
       try {
         loop.submit(new PlayerAction(pid, "PLAY", move)); // null => PASS
         loop.tick();
