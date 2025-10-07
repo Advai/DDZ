@@ -15,7 +15,13 @@ public final class GameState {
     return new ArrayList<>();
   }
 
-  public void setLandlordId(UUID landlord) {}
+  public void setLandlordId(UUID landlord) {
+    this.landlordId = landlord;
+  }
+
+  public UUID getLandlordId() {
+    return this.landlordId;
+  }
 
   public void setCurrentLead(Object o) {}
 
@@ -55,6 +61,8 @@ public final class GameState {
   private final Deque<GameAction> actionLog;
 
   private Phase phase;
+
+  private UUID landlordId;
 
   private int currentPlayerIndex;
   private Instant updatedAt;
