@@ -34,4 +34,5 @@ Thumbs.db
 # Package files
 *.jar
 
-**/build/
+engine/build/
+server/build/
