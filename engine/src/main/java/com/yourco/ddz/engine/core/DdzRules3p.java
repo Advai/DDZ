@@ -138,7 +138,7 @@ public final class DdzRules3p implements Rules {
     s.setPassesInRow(s.passesInRow() + 1);
     s.nextPlayer();
     // If turn wraps to the lead player, trick closes → new trick
-//    if (Objects.equals(s.currentPlayerId(), s.getCurrentLeadPlayer())) {
+    //    if (Objects.equals(s.currentPlayerId(), s.getCurrentLeadPlayer())) {
     if (s.passesInRow() == 2) {
       s.setCurrentLead(null);
       s.setCurrentLeadPlayer(null);

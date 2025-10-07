@@ -36,7 +36,7 @@ public class DemoMain {
       // - null payload = PASS (allowed only if there is a current lead)
       // - List<Card> payload = attempt a play (requires a working detector)
       List<Card> move = chooseNextMove(state, pid);
-//      System.out.println("Player " + pid + " plays " + move);
+      //      System.out.println("Player " + pid + " plays " + move);
       try {
         loop.submit(new PlayerAction(pid, "PLAY", move)); // null => PASS
         loop.tick();
