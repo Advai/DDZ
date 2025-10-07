@@ -1,8 +1,7 @@
-package com.yourco.ddz.engine.demo;
+package com.yourco.ddz.engine.core;
 
 import com.yourco.ddz.engine.cards.Card;
 import com.yourco.ddz.engine.cards.Deck;
-import com.yourco.ddz.engine.core.*;
 import java.util.*;
 
 public final class DdzRules3p implements Rules {
@@ -24,6 +23,7 @@ public final class DdzRules3p implements Rules {
     switch (s.phase()) {
       case LOBBY -> onStart(s, a); // expect SystemAction("START")
       case PLAY -> onPlay(s, a); // expect PlayerAction("PLAY", List<Card> or null for PASS)
+      case BIDDING -> onBid(s, a);
       case SCORING, TERMINATED -> throw new IllegalStateException("Game over");
       default -> throw new IllegalStateException("Unsupported phase: " + s.phase());
     }
@@ -144,5 +144,36 @@ public final class DdzRules3p implements Rules {
       s.setCurrentLeadPlayer(null);
       s.setPassesInRow(0);
     }
+  }
+
+  private void onBid(GameState s, GameAction a) {
+    if (!(a instanceof PlayerAction pa)) {
+      throw new IllegalArgumentException("Expected PlayerAction");
+    }
+    if (!pa.playerId().equals(s.currentPlayerId())) {
+      throw new IllegalStateException("Not your turn");
+    }
+
+    // Expect Bid as the raw move
+    if (!(pa.payload() instanceof Bid bid)) {
+      throw new IllegalArgumentException("Bad payload");
+    }
+
+    int value = bid.getValue();
+    if (value < 0 || value > 3) {
+      throw new IllegalArgumentException("Bid must be between 0 and 3");
+    }
+
+    if (value == 0) {
+      onPass(s);
+      return;
+    }
+
+    if (value == 3) {
+      s.setLandlordId(pa.playerId());
+      return;
+    }
+
+    s.nextPlayer();
   }
 }

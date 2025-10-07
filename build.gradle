@@ -1,5 +1,6 @@
 plugins {
    id("com.diffplug.spotless") version "7.0.0" apply true
+   id 'java'
 }
 subprojects {
   apply plugin: "java"
@@ -15,4 +16,7 @@ subprojects {
       googleJavaFormat() // Use Google Java Format
     }
   }
+  tasks.withType(JavaCompile).configureEach {
+        dependsOn tasks.named('spotlessApply')
+    }
 }

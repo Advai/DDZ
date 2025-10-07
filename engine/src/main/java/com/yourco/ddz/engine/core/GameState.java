@@ -20,6 +20,10 @@ public final class GameState {
     this.landlordId = landlord;
   }
 
+  public UUID getLandlordId() {
+    return this.landlordId;
+  }
+
   public void setCurrentLead(PlayedHand p) {
     if (p == null) {
       return;
@@ -68,6 +72,8 @@ public final class GameState {
   private final Deque<GameAction> actionLog;
 
   private Phase phase;
+
+  private UUID landlordId;
 
   private int currentPlayerIndex;
   private Instant updatedAt;

@@ -31,7 +31,6 @@ logs/
 .DS_Store
 Thumbs.db
 
-
 # Package files
 *.jar
 

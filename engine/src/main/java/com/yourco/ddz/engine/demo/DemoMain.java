@@ -4,6 +4,7 @@ import com.yourco.ddz.engine.cards.Card;
 import com.yourco.ddz.engine.core.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
 import java.util.UUID;
 
 public class DemoMain {
@@ -11,26 +12,42 @@ public class DemoMain {
     // Init engine
     List<UUID> players = List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
     Rules rules =
-        com.yourco.ddz.engine.demo.DdzRules3p
+        com.yourco.ddz.engine.core.DdzRules3p
             .withStubs(); // uses SimplePlayDetector/Comparator stubs
     GameState state = new GameState("g-1", players);
     GameLoop loop = new GameLoop(rules, state);
+    Scanner scanner = new Scanner(System.in);
 
     // Start (deal, then enter BIDDING)
     loop.submit(new SystemAction("START", null));
     loop.tick();
 
     // Force bidding to 3 so we enter PLAY with the current player as landlord
-    if (state.phase() == GameState.Phase.BIDDING) {
-      loop.submit(new PlayerAction(state.currentPlayerId(), "BID", new Object()));
+    int numPlayersBid = 0;
+    state.setPhase(GameState.Phase.BIDDING);
+    while (state.phase() == GameState.Phase.BIDDING && numPlayersBid < 3) {
+      UUID currPlayer = state.currentPlayerId();
+
+      System.out.print("Enter BID value for player " + currPlayer + ": ");
+      String bidValue = scanner.nextLine();
+      Bid bid = new Bid(Integer.parseInt(bidValue));
+
+      loop.submit(new PlayerAction(currPlayer, "BID", bid));
       loop.tick();
+
+      System.out.println("Turn advanced. Current player: " + state.currentPlayerId());
+
+      numPlayersBid++;
     }
+
+    System.out.println("Landlord is " + state.getLandlordId());
 
     // PLAY loop: submit next action for the current player, tick, repeat
     // NOTE: With detector stubbed, any non-null card list will be invalid.
     // This loop is the structure you’ll keep; plug real move selection once detector works.
-    while (!rules.isTerminal(state)) {
-      UUID pid = state.currentPlayerId();
+    state.setPhase(GameState.Phase.PLAY);
+    for (UUID pid : state.players()) {
+      // UUID pid = state.currentPlayerId();
 
       // Decide the move to submit:
       // - null payload = PASS (allowed only if there is a current lead)
