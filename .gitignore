@@ -30,3 +30,8 @@ logs/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Package files
+*.jar
+
+**/build/
