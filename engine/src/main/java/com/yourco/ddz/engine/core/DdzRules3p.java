@@ -51,16 +51,21 @@ public final class DdzRules3p implements Rules {
 
     for (int i = 0; i < 17; i++) {
       for (UUID p : s.players()) {
-        s.handOf(p).addAll(List.of(pool.remove(0)));
+        s.handOf(p).add(pool.removeFirst());
+        System.out.println(s.handOf(p));
       }
     }
-    s.setBottom(List.copyOf(pool)); // remaining 3
+    //    s.setBottom(List.copyOf(pool)); // remaining 3
 
     // landlord = player 0 (placeholder; add bidding later)
     UUID landlord = s.players().get(0);
     s.setLandlordId(landlord);
-    s.handOf(landlord).addAll(s.bottom());
-
+    s.handOf(landlord).addAll(pool);
+    System.out.println("Full landlord hand" + s.handOf(landlord));
+    for (UUID p : s.players()) {
+      Collections.sort(s.handOf(p), Comparator.comparing(Card::rank));
+      System.out.println("Sorted hand for " + p + s.handOf(p));
+    }
     // landlord starts
     s.setCurrentPlayerIndex(0);
     s.setCurrentLead(null);
@@ -97,6 +102,8 @@ public final class DdzRules3p implements Rules {
     var hand = maybe.get();
 
     // Own the cards
+    System.out.println("hand of pa " + pa + s.handOf(pa.playerId()));
+    System.out.println("hand.cards()" + hand.cards());
     if (!s.handOf(pa.playerId()).containsAll(hand.cards())) {
       throw new IllegalStateException("Card(s) not in hand");
     }
@@ -131,7 +138,8 @@ public final class DdzRules3p implements Rules {
     s.setPassesInRow(s.passesInRow() + 1);
     s.nextPlayer();
     // If turn wraps to the lead player, trick closes → new trick
-    if (Objects.equals(s.currentPlayerId(), s.getCurrentLeadPlayer())) {
+    //    if (Objects.equals(s.currentPlayerId(), s.getCurrentLeadPlayer())) {
+    if (s.passesInRow() == 2) {
       s.setCurrentLead(null);
       s.setCurrentLeadPlayer(null);
       s.setPassesInRow(0);

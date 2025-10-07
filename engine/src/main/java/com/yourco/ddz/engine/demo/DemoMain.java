@@ -2,6 +2,7 @@ package com.yourco.ddz.engine.demo;
 
 import com.yourco.ddz.engine.cards.Card;
 import com.yourco.ddz.engine.core.*;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
@@ -52,7 +53,7 @@ public class DemoMain {
       // - null payload = PASS (allowed only if there is a current lead)
       // - List<Card> payload = attempt a play (requires a working detector)
       List<Card> move = chooseNextMove(state, pid);
-
+      //      System.out.println("Player " + pid + " plays " + move);
       try {
         loop.submit(new PlayerAction(pid, "PLAY", move)); // null => PASS
         loop.tick();
@@ -63,17 +64,17 @@ public class DemoMain {
       }
 
       // Optional minimal telemetry
-      System.out.println(
-          "Turn advanced. Current player: "
-              + state.currentPlayerId()
-              + ", lead="
-              + (state.getCurrentLead() == null ? "none" : state.getCurrentLead().type())
-              + ", p0="
-              + state.handOf(players.get(0)).size()
-              + ", p1="
-              + state.handOf(players.get(1)).size()
-              + ", p2="
-              + state.handOf(players.get(2)).size());
+      //      System.out.println(
+      //          "Turn advanced. Current player: "
+      //              + state.currentPlayerId()
+      //              + ", lead="
+      //              + (state.getCurrentLead() == null ? "none" : state.getCurrentLead().type())
+      //              + ", p0="
+      //              + state.handOf(players.get(0)).size()
+      //              + ", p1="
+      //              + state.handOf(players.get(1)).size()
+      //              + ", p2="
+      //              + state.handOf(players.get(2)).size());
     }
 
     System.out.println("Phase: " + state.phase());
@@ -86,6 +87,17 @@ public class DemoMain {
     // Until detection is implemented, avoid playing cards.
     // If there is no current lead, PASS is illegal for the leader, so return null only when lead
     // exists.
-    return (state.getCurrentLead() != null) ? null /* PASS */ : null /* would need a real play */;
+    if (state.getCurrentLead() == null) {
+      return Collections.singletonList(state.handOf(pid).getFirst());
+    } else {
+      if (state.handOf(pid).getLast().rank().ordinal()
+          <= state.getCurrentLead().cards().getLast().rank().ordinal()) {
+        return null;
+      } else {
+        return Collections.singletonList(state.handOf(pid).getLast());
+      }
+    }
+    //    return (state.getCurrentLead() != null) ? null /* PASS */ : null /* would need a real play
+    // */;
   }
 }

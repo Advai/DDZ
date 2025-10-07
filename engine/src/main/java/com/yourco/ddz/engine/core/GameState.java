@@ -6,13 +6,14 @@ import java.util.*;
 
 public final class GameState {
   public PlayedHand getCurrentLead() {
-    ArrayList<Card> cards = new ArrayList<Card>();
-    cards.add(new Card(Card.Suit.CLUBS, Card.Rank.THREE));
-    return new PlayedHand(ComboType.SINGLE, cards, 1, 1);
+    //    ArrayList<Card> cards = new ArrayList<Card>();
+    //    cards.add(new Card(Card.Suit.CLUBS, Card.Rank.THREE));
+    //    return new PlayedHand(ComboType.SINGLE, cards);
+    return this.currentLead;
   }
 
   public List<Card> handOf(UUID uuid) {
-    return new ArrayList<>();
+    return this.hands.get(uuid);
   }
 
   public void setLandlordId(UUID landlord) {
@@ -23,24 +24,34 @@ public final class GameState {
     return this.landlordId;
   }
 
-  public void setCurrentLead(Object o) {}
+  public void setCurrentLead(PlayedHand p) {
+    if (p == null) {
+      return;
+    }
+    Collections.sort(p.cards(), Comparator.comparing(Card::rank));
+    this.currentLead = p;
+  }
 
-  public void setCurrentLeadPlayer(Object o) {}
+  public void setCurrentLeadPlayer(UUID uuid) {
+    this.currentLeadPlayer = uuid;
+  }
 
-  public void setPassesInRow(int i) {}
+  public void setPassesInRow(int i) {
+    this.pass_count = i;
+  }
 
-  public void setBottom(List<Card> cards) {}
+  //  public void setBottom(List<Card> cards) {}
 
   public Collection<Card> bottom() {
     return new ArrayList<Card>();
   }
 
   public int passesInRow() {
-    return 0;
+    return this.pass_count;
   }
 
-  public Object getCurrentLeadPlayer() {
-    return new Object();
+  public UUID getCurrentLeadPlayer() {
+    return this.currentLeadPlayer;
   }
 
   public enum Phase {
@@ -56,7 +67,7 @@ public final class GameState {
 
   private final List<java.util.UUID> players;
 
-  private final Map<java.util.UUID, Object> hands;
+  private final Map<java.util.UUID, List<Card>> hands;
 
   private final Deque<GameAction> actionLog;
 
@@ -66,6 +77,10 @@ public final class GameState {
 
   private int currentPlayerIndex;
   private Instant updatedAt;
+  private int pass_count;
+  private java.util.UUID landlordId;
+  private PlayedHand currentLead;
+  private java.util.UUID currentLeadPlayer;
 
   public GameState(String gameId, List<java.util.UUID> players) {
     this.gameId = Objects.requireNonNull(gameId);
@@ -75,6 +90,9 @@ public final class GameState {
     this.phase = Phase.LOBBY;
     this.currentPlayerIndex = 0;
     this.updatedAt = Instant.now();
+    for (UUID p : this.players) {
+      hands.put(p, new ArrayList<>());
+    }
   }
 
   public String gameId() {
