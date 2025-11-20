@@ -1,2 +1,21 @@
-plugins { id 'java-library' }
-dependencies { testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3' }
+plugins {
+  id 'java-library'
+  id 'application'
+}
+
+application {
+  mainClass = 'com.yourco.ddz.engine.demo.StandaloneGameTest'
+}
+
+run {
+  standardInput = System.in
+}
+
+dependencies {
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+  useJUnitPlatform()
+}

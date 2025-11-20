@@ -1,6 +1,9 @@
 package com.yourco.ddz.engine.cards;
 
+import com.yourco.ddz.engine.core.PlayedHand;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class Card {
   public enum Suit {
@@ -43,6 +46,10 @@ public final class Card {
 
   public Rank rank() {
     return rank;
+  }
+
+  public interface HandPattern {
+    Optional<PlayedHand> match(List<Card> cards);
   }
 
   @Override
