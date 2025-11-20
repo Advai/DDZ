@@ -1,0 +1,38 @@
+===================================
+DDZ GAME - QUICK START
+===================================
+
+1. START BOTH SERVERS:
+   ./start-servers.sh
+
+   (Wait ~10 seconds for "READY TO PLAY!")
+
+2. OPEN BROWSER:
+   http://localhost:3000
+
+3. CREATE GAME:
+   - Enter name
+   - Click 'Create Game'
+   - Note the join code (gold box)
+
+4. JOIN GAME (in other browser windows):
+   - Enter name  
+   - Enter join code
+   - Click 'Join Game'
+
+5. PLAY:
+   - Start game
+   - Bid
+   - Play cards!
+
+===================================
+
+TO STOP SERVERS:
+   ./stop-servers.sh
+
+LOGS:
+   tail -f /tmp/ddz-frontend.log
+   tail -f /tmp/ddz-backend.log
+
+Full docs: README.md
+===================================
