@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dou Dizhu (斗地主) - Game Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #15141a 0%, #335155 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .panel {
+            background: rgba(51, 81, 85, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(248, 207, 44, 0.3);
+        }
+
+        .panel h2 {
+            margin-bottom: 15px;
+            color: #f8cf2c;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+        }
+
+        button {
+            background: #f8cf2c;
+            color: #15141a;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        button:hover {
+            background: #ffdc4e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(248, 207, 44, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info-box {
+            background: rgba(21, 20, 26, 0.5);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .status.connected {
+            background: rgba(248, 207, 44, 0.3);
+            color: #f8cf2c;
+        }
+
+        .status.disconnected {
+            background: rgba(171, 32, 42, 0.3);
+            color: #ab202a;
+        }
+
+        .game-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .players-list {
+            list-style: none;
+        }
+
+        .players-list li {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(51, 81, 85, 0.3);
+            border-radius: 4px;
+        }
+
+        .players-list li.landlord {
+            background: rgba(248, 207, 44, 0.2);
+            border-left: 4px solid #f8cf2c;
+        }
+
+        .players-list li.current-turn {
+            border-left: 4px solid #ab202a;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(21, 20, 26, 0.5);
+            border-radius: 8px;
+            min-height: 100px;
+        }
+
+        .card {
+            width: 70px;
+            height: 100px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid #ccc;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .card.selected {
+            transform: translateY(-15px);
+            border-color: #f8cf2c;
+            box-shadow: 0 8px 16px rgba(248, 207, 44, 0.6);
+        }
+
+        .card.red {
+            color: #ab202a;
+        }
+
+        .card.black {
+            color: #335155;
+        }
+
+        .card.joker {
+            background: linear-gradient(135deg, #ab202a 0%, #335155 100%);
+            color: #f8cf2c;
+            border-color: #f8cf2c;
+        }
+
+        .card.joker:hover {
+            background: linear-gradient(135deg, #335155 0%, #ab202a 100%);
+        }
+
+        .card .rank {
+            font-size: 24px;
+        }
+
+        .card .suit {
+            font-size: 20px;
+        }
+
+        .bid-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .play-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .play-buttons button {
+            flex: 1;
+        }
+
+        .log {
+            background: rgba(21, 20, 26, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border: 1px solid rgba(51, 81, 85, 0.5);
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px;
+        }
+
+        .log-entry.error {
+            color: #ab202a;
+        }
+
+        .log-entry.success {
+            color: #f8cf2c;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .landlord-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .current-lead {
+            background: rgba(171, 32, 42, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(171, 32, 42, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🃏 Dou Dizhu (斗地主) 🃏</h1>
+
+        <!-- Connection Setup -->
+        <div id="setupPanel" class="panel">
+            <h2>Setup</h2>
+
+            <div class="form-group">
+                <label>Server URL:</label>
+                <input type="text" id="serverUrl" value="http://localhost:8080" placeholder="http://localhost:8080">
+            </div>
+
+            <div class="form-group">
+                <label>Your Name:</label>
+                <input type="text" id="playerName" placeholder="Enter your name">
+            </div>
+
+            <h3 style="margin-top: 20px;">Create New Game</h3>
+            <div class="form-group">
+                <label>Number of Players:</label>
+                <select id="playerCount">
+                    <option value="3">3 Players</option>
+                    <option value="4">4 Players</option>
+                    <option value="5">5 Players</option>
+                </select>
+            </div>
+            <button onclick="createGame()">Create Game</button>
+
+            <h3 style="margin-top: 20px;">Join Existing Game</h3>
+            <div class="form-group">
+                <label>Join Code:</label>
+                <input type="text" id="joinCode" placeholder="Enter 4-letter code" style="text-transform: uppercase" maxlength="4">
+            </div>
+            <button onclick="joinGame()">Join Game</button>
+        </div>
+
+        <!-- Game Panel -->
+        <div id="gamePanel" class="panel hidden">
+            <div id="connectionStatus" class="status disconnected">Disconnected</div>
+
+            <h2>Game Info</h2>
+            <div class="game-info">
+                <div class="info-box">
+                    <strong>Game ID:</strong> <span id="gameId">-</span>
+                </div>
+                <div class="info-box" style="background: rgba(248, 207, 44, 0.3); border: 2px solid #f8cf2c;">
+                    <strong style="color: #f8cf2c;">📋 JOIN CODE:</strong> <span id="gameJoinCode" style="font-size: 24px; font-weight: bold; letter-spacing: 3px; color: #f8cf2c;">-</span>
+                </div>
+                <div class="info-box">
+                    <strong>Your Name:</strong> <span id="myPlayerNameDisplay">-</span>
+                </div>
+                <div class="info-box">
+                    <strong>Phase:</strong> <span id="gamePhase">-</span>
+                </div>
+            </div>
+
+            <button onclick="startGame()" id="startGameBtn">Start Game</button>
+            <button onclick="leaveGame()">Leave Game</button>
+
+            <!-- Bet and Multiplier Info -->
+            <div id="betPanel" class="info-box" style="margin-top: 20px; background: rgba(171, 32, 42, 0.3); border: 2px solid #ab202a; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: #f8cf2c;">💵 Current Bet:</strong>
+                        <span id="currentBet" style="font-size: 20px; font-weight: bold; color: #f8cf2c;">-</span>
+                    </div>
+                    <div>
+                        <strong>💣 Bombs:</strong> <span id="bombCount">0</span>
+                        <strong style="margin-left: 15px;">🚀 Rockets:</strong> <span id="rocketCount">0</span>
+                    </div>
+                    <div>
+                        <strong style="color: #f8cf2c;">✖️ Multiplier:</strong>
+                        <span id="multiplier" style="font-size: 20px; font-weight: bold; color: #f8cf2c;">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cumulative Scoreboard -->
+            <div id="scoreboardPanel" class="panel" style="margin-top: 20px;">
+                <h3 style="color: #f8cf2c;">📊 Session Scoreboard</h3>
+                <div id="cumulativeScores" style="font-family: monospace; font-size: 14px;"></div>
+            </div>
+
+            <h3 style="margin-top: 20px;">Players</h3>
+            <ul id="playersList" class="players-list"></ul>
+
+            <!-- Current Lead -->
+            <div id="currentLeadPanel" class="current-lead hidden">
+                <h3>Current Lead</h3>
+                <div id="currentLeadCards" class="cards-container"></div>
+            </div>
+
+            <!-- Bidding Phase - Always visible, conditionally enabled -->
+            <div id="biddingPanel" style="background: rgba(51, 81, 85, 0.4); padding: 20px; border-radius: 8px; margin-top: 20px; border: 2px solid rgba(248, 207, 44, 0.3);">
+                <h3 style="color: #f8cf2c;">💰 Bidding Phase</h3>
+                <p id="biddingStatus" style="font-size: 16px; margin: 10px 0;">Waiting for bidding phase...</p>
+                <div class="bid-buttons">
+                    <button id="bid0" onclick="placeBid(0)" style="background: #335155; color: #fff;" disabled>Pass (0)</button>
+                    <button id="bid1" onclick="placeBid(1)" style="background: #f8cf2c; color: #15141a;" disabled>Bid 1</button>
+                    <button id="bid2" onclick="placeBid(2)" style="background: linear-gradient(135deg, #f8cf2c 0%, #ab202a 50%); color: #fff;" disabled>Bid 2</button>
+                    <button id="bid3" onclick="placeBid(3)" style="background: #ab202a; color: #fff;" disabled>Bid 3</button>
+                </div>
+            </div>
+
+            <!-- Landlord Selection -->
+            <div id="landlordSelectionPanel" class="hidden">
+                <h3>Select Co-Landlord</h3>
+                <p>Choose another player to be co-landlord:</p>
+                <div id="landlordSelectionButtons" class="landlord-selection"></div>
+            </div>
+
+            <!-- Your Hand -->
+            <h3 style="margin-top: 20px;">Your Hand (<span id="handCount">0</span> cards)</h3>
+            <div id="yourHand" class="cards-container"></div>
+
+            <!-- Play Actions -->
+            <div id="playPanel" class="hidden">
+                <div class="play-buttons">
+                    <button onclick="playSelectedCards()">Play Selected Cards</button>
+                    <button onclick="pass()">Pass</button>
+                    <button onclick="clearSelection()">Clear Selection</button>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 20px;">Game Log</h3>
+            <div id="gameLog" class="log"></div>
+
+            <!-- Game Over Overlay -->
+            <div id="gameOverOverlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(21, 20, 26, 0.95); z-index: 1000; display: none; align-items: center; justify-content: center;">
+                <div style="background: linear-gradient(135deg, #335155 0%, #15141a 100%); padding: 40px; border-radius: 20px; border: 3px solid #f8cf2c; max-width: 600px; text-align: center; box-shadow: 0 10px 40px rgba(248, 207, 44, 0.3);">
+                    <h1 style="color: #f8cf2c; font-size: 3em; margin-bottom: 20px;">🎉 GAME OVER 🎉</h1>
+                    <div id="gameOverResults" style="font-size: 1.5em; margin-bottom: 30px; line-height: 1.8;"></div>
+                    <div style="display: flex; gap: 20px; justify-content: center;">
+                        <button onclick="playAgain()" style="padding: 15px 40px; font-size: 1.2em; background: #f8cf2c; color: #15141a;">Play Again</button>
+                        <button onclick="closeGameOverOverlay()" style="padding: 15px 40px; font-size: 1.2em; background: #335155; color: #fff;">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let gameState = null;
+        let myPlayerId = null;
+        let myPlayerName = null; // Store the player's name
+        let currentGameId = null;
+        let joinCodeForGame = null;
+        let selectedCards = new Set();
+        let cumulativeScores = {}; // Track total scores for this lobby session
+        let gamesPlayed = 0; // Number of games completed in this lobby
+        let gameOverShown = false; // Track if we've shown game over for current game
+        let playerNames = {}; // Map playerId to player name
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('gameLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function createGame() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const playerName = document.getElementById('playerName').value;
+            const playerCount = parseInt(document.getElementById('playerCount').value);
+
+            if (!playerName) {
+                alert('Please enter your name');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${serverUrl}/api/games`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ playerCount, creatorName: playerName })
+                });
+
+                if (!response.ok) throw new Error('Failed to create game');
+
+                const data = await response.json();
+                currentGameId = data.gameId;
+                joinCodeForGame = data.joinCode;
+                myPlayerId = data.yourPlayerId;
+                myPlayerName = playerName;
+
+                log(`✅ Game created! Join code: ${joinCodeForGame}`, 'success');
+                log(`🆔 Your player ID: ${myPlayerId}`);
+                log(`📋 Game ID: ${currentGameId}`);
+
+                // Update UI immediately with initial game info
+                document.getElementById('gameId').textContent = currentGameId;
+                document.getElementById('gameJoinCode').textContent = joinCodeForGame;
+                document.getElementById('myPlayerNameDisplay').textContent = myPlayerName;
+                document.getElementById('gamePhase').textContent = data.phase || 'LOBBY';
+
+                // Initialize game state from initial response
+                gameState = {
+                    phase: data.phase,
+                    players: data.players,
+                    currentPlayer: data.currentPlayer,
+                    myHand: [],
+                    playerCount: data.playerCount
+                };
+
+                switchToGamePanel();
+                connectWebSocket();
+                updateGameUI();
+            } catch (error) {
+                log(`Error creating game: ${error.message}`, 'error');
+            }
+        }
+
+        async function joinGame() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const playerName = document.getElementById('playerName').value;
+            const joinCode = document.getElementById('joinCode').value.toUpperCase();
+
+            if (!playerName || !joinCode) {
+                alert('Please enter your name and join code');
+                return;
+            }
+
+            try {
+                // First get game by join code
+                const gameResponse = await fetch(`${serverUrl}/api/games/by-code/${joinCode}`);
+                if (!gameResponse.ok) throw new Error('Game not found');
+
+                const gameData = await gameResponse.json();
+                currentGameId = gameData.gameId;
+                joinCodeForGame = joinCode;
+
+                // Now join the game
+                const joinResponse = await fetch(`${serverUrl}/api/games/${currentGameId}/join`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ playerName })
+                });
+
+                if (!joinResponse.ok) {
+                    const error = await joinResponse.text();
+                    throw new Error(error);
+                }
+
+                const data = await joinResponse.json();
+                // Get our player ID from response
+                myPlayerId = data.yourPlayerId;
+                myPlayerName = playerName;
+
+                log(`✅ Joined game ${joinCode}!`, 'success');
+                log(`🆔 Your player ID: ${myPlayerId}`);
+                log(`👥 Total players: ${data.players.length}/${data.playerCount}`);
+
+                // Update UI immediately with game info
+                document.getElementById('gameId').textContent = currentGameId;
+                document.getElementById('gameJoinCode').textContent = joinCodeForGame;
+                document.getElementById('myPlayerNameDisplay').textContent = myPlayerName;
+                document.getElementById('gamePhase').textContent = data.phase || 'LOBBY';
+
+                // Initialize game state from join response
+                gameState = {
+                    phase: data.phase,
+                    players: data.players,
+                    currentPlayer: data.currentPlayer,
+                    myHand: [],
+                    playerCount: data.playerCount
+                };
+
+                switchToGamePanel();
+                connectWebSocket();
+                updateGameUI();
+            } catch (error) {
+                log(`Error joining game: ${error.message}`, 'error');
+            }
+        }
+
+        function connectWebSocket() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const wsUrl = serverUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+
+            ws = new WebSocket(`${wsUrl}/ws/game/${currentGameId}?playerId=${myPlayerId}`);
+
+            ws.onopen = () => {
+                log('✅ WebSocket connected to game', 'success');
+                document.getElementById('connectionStatus').className = 'status connected';
+                document.getElementById('connectionStatus').textContent = 'Connected';
+            };
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                handleWebSocketMessage(message);
+            };
+
+            ws.onclose = () => {
+                log('❌ WebSocket disconnected', 'error');
+                document.getElementById('connectionStatus').className = 'status disconnected';
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+            };
+
+            ws.onerror = (error) => {
+                log(`❌ WebSocket error: ${error}`, 'error');
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function handleWebSocketMessage(message) {
+            console.log('📨 RAW WebSocket message:', JSON.stringify(message, null, 2));
+
+            // Handle error messages
+            if (message.error) {
+                log(`❌ Error: ${message.error}`, 'error');
+                return;
+            }
+
+            // Handle GAME_UPDATE messages
+            if (message.type === 'GAME_UPDATE') {
+                // Log any message text
+                if (message.message) {
+                    log(`💬 ${message.message}`);
+                }
+
+                // Update game state if present
+                if (message.state) {
+                    log(`🔄 Game state updated - Phase: ${message.state.phase}`, 'success');
+                    gameState = message.state;
+                    console.log('📊 Current game state:', gameState);
+                    updateGameUI();
+                }
+                return; // Important: return here so we don't fall through
+            }
+
+            // Legacy support for old message format
+            if (message.gameState) {
+                log(`🔄 Game state updated (legacy) - Phase: ${message.gameState.phase}`, 'success');
+                gameState = message.gameState;
+                console.log('📊 Current game state:', gameState);
+                updateGameUI();
+                return;
+            }
+
+            // Unknown message type
+            log(`⚠️ Received unknown message type: ${message.type || 'unknown'}`);
+        }
+
+        function updateGameUI() {
+            if (!gameState) {
+                console.log('⚠️ No game state to update');
+                return;
+            }
+
+            console.log('🔄 Updating UI with game state:', gameState);
+            log(`📋 Phase: ${gameState.phase}, Current Player: ${gameState.currentPlayer}`);
+
+            // Update game info
+            document.getElementById('gameId').textContent = currentGameId || gameState.gameId || '-';
+            document.getElementById('gameJoinCode').textContent = joinCodeForGame || '-';
+            document.getElementById('gamePhase').textContent = gameState.phase || 'UNKNOWN';
+
+            // Update players list
+            const playersList = document.getElementById('playersList');
+            playersList.innerHTML = '';
+            if (gameState.players) {
+                console.log('👥 Updating player list with', gameState.players.length, 'players:', gameState.players);
+                log(`👥 Players in game: ${gameState.players.length}`);
+
+                // Initialize scoreboard and track player names
+                gameState.players.forEach(player => {
+                    // Store player name mapping (backend uses 'id' not 'playerId')
+                    playerNames[player.id] = player.name;
+                    console.log(`📝 Mapped player name: ${player.id} -> ${player.name}`);
+
+                    // Initialize score to 0 for new players
+                    if (!(player.id in cumulativeScores)) {
+                        cumulativeScores[player.id] = 0;
+                        console.log(`➕ Added player ${player.name} to scoreboard at 0`);
+                    } else {
+                        console.log(`✓ Player ${player.name} already in scoreboard with score ${cumulativeScores[player.id]}`);
+                    }
+                });
+
+                console.log('📊 Current scoreboard state:', {
+                    playerNames: Object.keys(playerNames).length + ' players',
+                    cumulativeScores: Object.keys(cumulativeScores).length + ' scores',
+                    details: Object.entries(cumulativeScores).map(([id, score]) =>
+                        `${playerNames[id] || 'Unknown'}: ${score}`)
+                });
+
+                gameState.players.forEach(player => {
+                    const li = document.createElement('li');
+
+                    // Check if player is landlord (backend uses 'id' not 'playerId')
+                    const isLandlord = gameState.landlordIds && gameState.landlordIds.includes(player.id);
+                    // Note: backend sends 'currentPlayer' not 'currentPlayerId'
+                    const isCurrentTurn = player.id === gameState.currentPlayer;
+
+                    if (isLandlord) li.classList.add('landlord');
+                    if (isCurrentTurn) li.classList.add('current-turn');
+
+                    li.textContent = `${player.name} (${player.cardCount} cards)`;
+                    if (isLandlord) li.textContent += ' 👑';
+                    if (isCurrentTurn) li.textContent += ' ←';
+                    if (player.id === myPlayerId) li.textContent += ' (You)';
+
+                    playersList.appendChild(li);
+                });
+
+                // Always update scoreboard display
+                updateScoreboard();
+            } else {
+                console.log('⚠️ No players in game state');
+            }
+
+            // Update hand - NOTE: backend sends 'myHand' not 'hand'
+            const hand = gameState.myHand || [];
+            console.log('🃏 Rendering hand with', hand.length, 'cards:', hand);
+            log(`🃏 Your hand: ${hand.length} cards`);
+            renderHand(hand);
+            document.getElementById('handCount').textContent = hand.length;
+
+            // Show/hide phase panels
+            const isMyTurn = gameState.currentPlayer === myPlayerId;
+
+            // Find current player's name for logging
+            const currentPlayerName = gameState.players?.find(p => p.playerId === gameState.currentPlayer)?.name || 'Unknown';
+
+            log(`🎯 Turn check: current=${currentPlayerName}, me=${myPlayerId}, isMyTurn=${isMyTurn}`);
+            if (gameState.phase === 'BIDDING' && isMyTurn) {
+                log(`💡 IT'S YOUR TURN TO BID!`, 'success');
+            } else if (gameState.phase === 'BIDDING') {
+                log(`⏳ Waiting for ${currentPlayerName} to bid...`);
+            }
+
+            // Bidding panel - always visible, but enable/disable buttons based on turn
+            const canBid = gameState.phase === 'BIDDING' && isMyTurn && !gameState.awaitingLandlordSelection;
+            console.log('🎲 Bidding panel check:', {
+                phase: gameState.phase,
+                isMyTurn,
+                awaitingLandlordSelection: gameState.awaitingLandlordSelection,
+                canBid
+            });
+
+            // Update bidding panel status and button states
+            const biddingStatus = document.getElementById('biddingStatus');
+            const bidButtons = ['bid0', 'bid1', 'bid2', 'bid3'];
+
+            if (gameState.phase === 'BIDDING') {
+                if (canBid) {
+                    biddingStatus.textContent = '👉 YOUR TURN - Place your bid (0 = pass, 1-3 = bid value):';
+                    biddingStatus.style.color = '#f8cf2c';
+                    biddingStatus.style.fontWeight = 'bold';
+                    bidButtons.forEach(id => document.getElementById(id).disabled = false);
+                    log('💰 BIDDING ENABLED - Place your bid!', 'success');
+                } else if (gameState.awaitingLandlordSelection) {
+                    biddingStatus.textContent = '⏳ Waiting for landlord selection...';
+                    biddingStatus.style.color = '#fff';
+                    biddingStatus.style.fontWeight = 'normal';
+                    bidButtons.forEach(id => document.getElementById(id).disabled = true);
+                } else {
+                    biddingStatus.textContent = `⏳ Waiting for ${currentPlayerName} to bid...`;
+                    biddingStatus.style.color = '#fff';
+                    biddingStatus.style.fontWeight = 'normal';
+                    bidButtons.forEach(id => document.getElementById(id).disabled = true);
+                }
+            } else {
+                biddingStatus.textContent = `Phase: ${gameState.phase || 'UNKNOWN'}`;
+                biddingStatus.style.color = '#335155';
+                biddingStatus.style.fontWeight = 'normal';
+                bidButtons.forEach(id => document.getElementById(id).disabled = true);
+            }
+
+            // Landlord selection panel
+            const showLandlordSelection = gameState.phase === 'BIDDING' && gameState.awaitingLandlordSelection === myPlayerId;
+            document.getElementById('landlordSelectionPanel').classList.toggle('hidden', !showLandlordSelection);
+            if (showLandlordSelection) {
+                log('👑 SELECT CO-LANDLORD - Choose your partner!', 'success');
+                renderLandlordSelection();
+            }
+
+            // Play panel - show if in PLAY phase and it's my turn
+            const showPlayPanel = gameState.phase === 'PLAY' && isMyTurn;
+            document.getElementById('playPanel').classList.toggle('hidden', !showPlayPanel);
+            if (showPlayPanel) {
+                log('🎮 YOUR TURN - Play cards or pass!', 'success');
+            }
+
+            // Show current lead
+            if (gameState.currentLead && gameState.currentLead.cards) {
+                document.getElementById('currentLeadPanel').classList.remove('hidden');
+                renderCurrentLead(gameState.currentLead);
+            } else {
+                document.getElementById('currentLeadPanel').classList.add('hidden');
+            }
+
+            // Update bet/multiplier panel
+            const betPanel = document.getElementById('betPanel');
+            if (gameState.phase === 'PLAY' || gameState.phase === 'TERMINATED' || gameState.phase === 'SCORING') {
+                betPanel.style.display = 'block';
+                document.getElementById('currentBet').textContent = gameState.currentBet || 0;
+                document.getElementById('bombCount').textContent = gameState.bombsPlayed || 0;
+                document.getElementById('rocketCount').textContent = gameState.rocketsPlayed || 0;
+                document.getElementById('multiplier').textContent = gameState.multiplier || 0;
+            } else {
+                betPanel.style.display = 'none';
+            }
+
+            // Handle TERMINATED phase (game over)
+            if (gameState.phase === 'TERMINATED' && !gameOverShown) {
+                console.log('🎮 TERMINATED phase detected! Showing overlay...');
+                log('🎉 GAME OVER! Final scores calculated.', 'success');
+
+                // Update cumulative scores
+                if (gameState.scores) {
+                    Object.entries(gameState.scores).forEach(([playerId, scoreChange]) => {
+                        if (!cumulativeScores[playerId]) {
+                            cumulativeScores[playerId] = 0;
+                        }
+                        cumulativeScores[playerId] += scoreChange;
+                    });
+                    gamesPlayed++;
+                }
+
+                // Show game over overlay (only once per game)
+                showGameOverOverlay();
+                gameOverShown = true;
+
+                // Show and update scoreboard
+                updateScoreboard();
+            }
+
+            // Update start button
+            const startBtn = document.getElementById('startGameBtn');
+            startBtn.disabled = gameState.phase !== 'LOBBY' || gameState.players.length < gameState.playerCount;
+        }
+
+        function renderHand(cards) {
+            const handDiv = document.getElementById('yourHand');
+            handDiv.innerHTML = '';
+
+            if (!cards || cards.length === 0) {
+                handDiv.innerHTML = '<p style="color: #ccc; margin: 20px;">No cards yet</p>';
+                return;
+            }
+
+            // Sort cards by Dou Dizhu rank order
+            const sortedCards = [...cards].sort((a, b) => {
+                const rankOrder = [
+                    'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN',
+                    'JACK', 'QUEEN', 'KING', 'ACE', 'TWO', 'LITTLE_JOKER', 'BIG_JOKER'
+                ];
+                return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
+            });
+
+            sortedCards.forEach(card => {
+                const cardDiv = createCardElement(card);
+                handDiv.appendChild(cardDiv);
+            });
+        }
+
+        function formatRank(rank) {
+            // Convert backend enum names to display format
+            const rankMap = {
+                'THREE': '3',
+                'FOUR': '4',
+                'FIVE': '5',
+                'SIX': '6',
+                'SEVEN': '7',
+                'EIGHT': '8',
+                'NINE': '9',
+                'TEN': '10',
+                'JACK': 'J',
+                'QUEEN': 'Q',
+                'KING': 'K',
+                'ACE': 'A',
+                'TWO': '2',
+                'LITTLE_JOKER': '🃏',  // Little Joker (playing card joker)
+                'BIG_JOKER': '🤡'      // Big Joker (clown)
+            };
+            return rankMap[rank] || rank;
+        }
+
+        function createCardElement(card, selectable = true) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+
+            // Create unique card key using rank + first letter of suit
+            const cardKey = `${card.rank}${card.suit[0]}`;
+            if (selectedCards.has(cardKey)) {
+                cardDiv.classList.add('selected');
+            }
+
+            // Handle jokers specially
+            const isJoker = card.rank === 'LITTLE_JOKER' || card.rank === 'BIG_JOKER';
+
+            if (isJoker) {
+                cardDiv.classList.add('joker');
+                // Jokers get special styling
+                const jokerDiv = document.createElement('div');
+                jokerDiv.className = 'rank';
+                jokerDiv.style.fontSize = '48px';
+                jokerDiv.textContent = formatRank(card.rank);
+                cardDiv.appendChild(jokerDiv);
+            } else {
+                // Determine color for regular cards
+                if (card.suit === 'HEARTS' || card.suit === 'DIAMONDS') {
+                    cardDiv.classList.add('red');
+                } else {
+                    cardDiv.classList.add('black');
+                }
+
+                const rankDiv = document.createElement('div');
+                rankDiv.className = 'rank';
+                rankDiv.textContent = formatRank(card.rank);
+
+                const suitDiv = document.createElement('div');
+                suitDiv.className = 'suit';
+                const suitSymbol = {
+                    'HEARTS': '♥',
+                    'DIAMONDS': '♦',
+                    'CLUBS': '♣',
+                    'SPADES': '♠'
+                }[card.suit] || '';
+                suitDiv.textContent = suitSymbol;
+
+                cardDiv.appendChild(rankDiv);
+                cardDiv.appendChild(suitDiv);
+            }
+
+            if (selectable) {
+                cardDiv.onclick = () => toggleCardSelection(cardKey, card);
+            } else {
+                cardDiv.style.cursor = 'default';
+            }
+
+            return cardDiv;
+        }
+
+        function toggleCardSelection(cardKey, card) {
+            if (selectedCards.has(cardKey)) {
+                selectedCards.delete(cardKey);
+            } else {
+                selectedCards.add(cardKey);
+            }
+            // Re-render to update selection state
+            renderHand(gameState.myHand || []);
+        }
+
+        function clearSelection() {
+            selectedCards.clear();
+            renderHand(gameState.myHand || []);
+        }
+
+        function renderCurrentLead(playedHand) {
+            const leadDiv = document.getElementById('currentLeadCards');
+            leadDiv.innerHTML = '';
+
+            if (!playedHand || !playedHand.cards || playedHand.cards.length === 0) return;
+
+            // Format combo type for display
+            const comboTypeDisplay = formatComboType(playedHand.comboType);
+
+            // Add combo type header
+            const header = document.createElement('div');
+            header.style.cssText = 'width: 100%; text-align: center; margin-bottom: 10px; font-size: 16px; color: #f8cf2c; font-weight: bold;';
+            header.textContent = comboTypeDisplay;
+            leadDiv.appendChild(header);
+
+            // Add cards
+            playedHand.cards.forEach(card => {
+                const cardDiv = createCardElement(card, false); // Not selectable
+                leadDiv.appendChild(cardDiv);
+            });
+        }
+
+        function formatComboType(comboType) {
+            // Convert enum names to readable format
+            const typeMap = {
+                'SINGLE': '🎴 Single',
+                'PAIR': '👯 Pair',
+                'TRIPLE': '🎯 Triple',
+                'TRIPLE_PLUS_SINGLE': '🎯➕ Triple + Single',
+                'TRIPLE_PLUS_PAIR': '🎯➕➕ Triple + Pair',
+                'QUAD_PLUS_SINGLE': '💣 Quad + Singles',
+                'QUAD_PLUS_PAIR': '💣 Quad + Pairs',
+                'STRAIGHT': '📐 Straight',
+                'PAIR_STRAIGHT': '👯📐 Pair Straight',
+                'TRIPLE_STRAIGHT': '🎯📐 Triple Straight',
+                'AIRPLANE': '✈️ Airplane',
+                'AIRPLANE_PLUS_SINGLE': '✈️➕ Airplane + Singles',
+                'AIRPLANE_PLUS_PAIR': '✈️➕➕ Airplane + Pairs',
+                'BOMB': '💣 BOMB!',
+                'ROCKET': '🚀 ROCKET!'
+            };
+            return typeMap[comboType] || comboType;
+        }
+
+        function renderLandlordSelection() {
+            const container = document.getElementById('landlordSelectionButtons');
+            container.innerHTML = '';
+
+            if (!gameState || !gameState.players) return;
+
+            gameState.players.forEach(player => {
+                if (player.id === myPlayerId) return; // Can't select yourself
+                if (gameState.landlordIds && gameState.landlordIds.includes(player.id)) return; // Already landlord
+
+                const btn = document.createElement('button');
+                btn.textContent = player.name;
+                btn.onclick = () => selectLandlord(player.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function showGameOverOverlay() {
+            const overlay = document.getElementById('gameOverOverlay');
+            const resultsDiv = document.getElementById('gameOverResults');
+
+            // Determine if current player won or lost
+            const myScore = gameState.scores?.[myPlayerId] || 0;
+            const didIWin = myScore > 0;
+
+            // Build results display with personalized message
+            const overlayContent = overlay.querySelector('div');
+            overlayContent.innerHTML = '';
+
+            if (didIWin) {
+                // Victory screen
+                overlayContent.innerHTML = `
+                    <h1 style="color: #f8cf2c; font-size: 3em; margin-bottom: 20px;">🎉 VICTORY! 🎉</h1>
+                    <div style="font-size: 1.5em; margin-bottom: 30px; line-height: 1.8; color: #f8cf2c;">
+                        You won <strong>+${myScore}</strong> points!
+                    </div>
+                `;
+            } else {
+                // Defeat screen
+                overlayContent.innerHTML = `
+                    <h1 style="color: #ab202a; font-size: 3em; margin-bottom: 20px;">💔 DEFEAT 💔</h1>
+                    <div style="font-size: 1.5em; margin-bottom: 30px; line-height: 1.8; color: #ab202a;">
+                        You lost <strong>${myScore}</strong> points
+                    </div>
+                `;
+            }
+
+            // Show all scores using playerNames mapping
+            let scoresHTML = '<div style="margin-bottom: 30px; font-size: 1.2em;">';
+            scoresHTML += '<div style="margin-bottom: 10px; font-weight: bold;">Final Scores:</div>';
+
+            if (gameState.scores) {
+                Object.entries(gameState.scores).forEach(([playerId, scoreChange]) => {
+                    const playerName = playerNames[playerId] || 'Unknown';
+                    const color = scoreChange > 0 ? '#f8cf2c' : scoreChange < 0 ? '#ab202a' : '#fff';
+                    const indicator = scoreChange > 0 ? '👑' : '💀';
+                    scoresHTML += `<div style="color: ${color};">${indicator} ${playerName}: ${scoreChange > 0 ? '+' : ''}${scoreChange}</div>`;
+                });
+            }
+            scoresHTML += '</div>';
+
+            overlayContent.innerHTML += scoresHTML;
+
+            // Add buttons
+            overlayContent.innerHTML += `
+                <div style="display: flex; gap: 20px; justify-content: center;">
+                    <button onclick="playAgain()" style="padding: 15px 40px; font-size: 1.2em; background: #f8cf2c; color: #15141a;">Play Again</button>
+                    <button onclick="closeGameOverOverlay()" style="padding: 15px 40px; font-size: 1.2em; background: #335155; color: #fff;">Close</button>
+                </div>
+            `;
+
+            overlay.style.display = 'flex';
+        }
+
+        function closeGameOverOverlay() {
+            document.getElementById('gameOverOverlay').style.display = 'none';
+        }
+
+        function updateScoreboard() {
+            const scoresDiv = document.getElementById('cumulativeScores');
+
+            console.log('🏆 Updating scoreboard display');
+            console.log('   - cumulativeScores entries:', Object.keys(cumulativeScores).length);
+            console.log('   - playerNames entries:', Object.keys(playerNames).length);
+
+            if (Object.keys(cumulativeScores).length === 0) {
+                scoresDiv.innerHTML = '<div style="color: #335155;">Waiting for players...</div>';
+                console.log('   ⚠️ No scores to display yet');
+                return;
+            }
+
+            // Sort players by cumulative score (highest first)
+            const sortedScores = Object.entries(cumulativeScores)
+                .map(([playerId, score]) => {
+                    const name = playerNames[playerId] || 'Unknown';
+                    console.log(`   - ${name} (${playerId.substring(0, 8)}...): ${score}`);
+                    return { playerId, score, name };
+                })
+                .sort((a, b) => b.score - a.score);
+
+            let html = `<div style="margin-bottom: 10px;">Games Played: ${gamesPlayed}</div>`;
+            html += '<table style="width: 100%; border-collapse: collapse;">';
+            html += '<tr style="border-bottom: 1px solid #335155;"><th style="text-align: left; padding: 5px;">Player</th><th style="text-align: right; padding: 5px;">Total Score</th></tr>';
+
+            sortedScores.forEach((entry, index) => {
+                const rank = index + 1;
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+                const color = entry.score > 0 ? '#f8cf2c' : entry.score < 0 ? '#ab202a' : '#fff';
+                html += `<tr style="border-bottom: 1px solid rgba(51, 81, 85, 0.3);">`;
+                html += `<td style="padding: 5px;">${medal} ${entry.name}</td>`;
+                html += `<td style="text-align: right; padding: 5px; color: ${color}; font-weight: bold;">${entry.score > 0 ? '+' : ''}${entry.score}</td>`;
+                html += `</tr>`;
+            });
+
+            html += '</table>';
+            scoresDiv.innerHTML = html;
+        }
+
+        async function playAgain() {
+            closeGameOverOverlay();
+            gameOverShown = false; // Reset flag for new game
+
+            // Call the server to restart the game
+            const serverUrl = document.getElementById('serverUrl').value;
+            try {
+                const response = await fetch(`${serverUrl}/api/games/${currentGameId}/start`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+
+                log('🎮 Starting new game!', 'success');
+            } catch (error) {
+                log(`❌ Error starting new game: ${error.message}`, 'error');
+            }
+        }
+
+        async function startGame() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            gameOverShown = false; // Reset flag for new game
+
+            try {
+                log('🎬 Starting game...', 'success');
+                const response = await fetch(`${serverUrl}/api/games/${currentGameId}/start`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+
+                const data = await response.json();
+                console.log('📥 Start game response:', data);
+
+                // GameInfo doesn't have full state, just update phase in UI
+                if (data.phase) {
+                    document.getElementById('gamePhase').textContent = data.phase;
+                    log(`✅ Game started! Phase: ${data.phase}`, 'success');
+                }
+
+                // The WebSocket will send the full game state with hands dealt
+            } catch (error) {
+                log(`❌ Error starting game: ${error.message}`, 'error');
+            }
+        }
+
+        function placeBid(bidValue) {
+            log(`📊 Placing bid: ${bidValue}`, 'success');
+            sendWebSocketMessage({
+                type: 'BID',
+                playerId: myPlayerId,
+                bidValue: bidValue
+            });
+        }
+
+        function selectLandlord(selectedPlayerId) {
+            log(`👑 Selecting co-landlord...`, 'success');
+            sendWebSocketMessage({
+                type: 'SELECT_LANDLORD',
+                playerId: myPlayerId,
+                selectedPlayerId: selectedPlayerId
+            });
+        }
+
+        function playSelectedCards() {
+            if (selectedCards.size === 0) {
+                alert('Please select cards to play');
+                return;
+            }
+
+            const cards = Array.from(selectedCards).map(cardKey => {
+                // Card key format is: rank + first letter of suit (e.g., "3H", "AH", "2D")
+                const rank = cardKey.slice(0, -1);
+                const suitLetter = cardKey.slice(-1);
+                const suitMap = {'H': 'HEARTS', 'D': 'DIAMONDS', 'C': 'CLUBS', 'S': 'SPADES', 'J': 'JOKER'};
+
+                return { rank, suit: suitMap[suitLetter] || 'JOKER' };
+            });
+
+            log(`🎮 Playing ${cards.length} card(s): ${Array.from(selectedCards).join(', ')}`, 'success');
+            console.log('Playing cards:', cards);
+
+            sendWebSocketMessage({
+                type: 'PLAY',
+                playerId: myPlayerId,
+                cards: cards
+            });
+
+            selectedCards.clear();
+        }
+
+        function pass() {
+            log('⏭️ Passing turn', 'success');
+            sendWebSocketMessage({
+                type: 'PASS',
+                playerId: myPlayerId
+            });
+        }
+
+        function sendWebSocketMessage(message) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                console.log('📤 Sending WebSocket message:', message);
+                ws.send(JSON.stringify(message));
+            } else {
+                log('❌ WebSocket not connected', 'error');
+            }
+        }
+
+        function switchToGamePanel() {
+            document.getElementById('setupPanel').classList.add('hidden');
+            document.getElementById('gamePanel').classList.remove('hidden');
+        }
+
+        function leaveGame() {
+            if (ws) ws.close();
+            document.getElementById('setupPanel').classList.remove('hidden');
+            document.getElementById('gamePanel').classList.add('hidden');
+            currentGameId = null;
+            myPlayerId = null;
+            myPlayerName = null;
+            gameState = null;
+            log('Left game');
+        }
+    </script>
+</body>
+</html>

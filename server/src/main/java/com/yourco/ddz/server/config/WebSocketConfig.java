@@ -9,6 +9,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 @Configuration
 @EnableWebSocket
+@org.springframework.context.annotation.Profile("!test")
 public class WebSocketConfig implements WebSocketConfigurer {
   private final GameWebSocketHandler handler;
 
