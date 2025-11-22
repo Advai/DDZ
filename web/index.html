@@ -798,6 +798,9 @@
 
                 // Show and update scoreboard
                 updateScoreboard();
+            } else if (gameState.phase !== 'TERMINATED' && gameOverShown) {
+                // Reset flag when we transition out of TERMINATED (new game started)
+                gameOverShown = false;
             }
 
             // Update start button - enable in LOBBY or TERMINATED phase
@@ -1111,7 +1114,9 @@
 
         async function startGame() {
             const serverUrl = document.getElementById('serverUrl').value;
-            gameOverShown = false; // Reset flag for new game
+
+            // Close overlay if it's open (when restarting from TERMINATED)
+            closeGameOverOverlay();
 
             try {
                 log('🎬 Starting game...', 'success');
