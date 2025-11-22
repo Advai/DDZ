@@ -22,11 +22,27 @@ public final class GameLoop {
   }
 
   public void tick() {
+    // Special case: allow restarting from terminal state
+    if (rules.isTerminal(state) && !inbox.isEmpty()) {
+      var nextAction = inbox.peek();
+      if (nextAction instanceof SystemAction sa && "START".equals(sa.type())) {
+        // Process the restart action
+        inbox.poll();
+        rules.apply(state, sa);
+        state.addAction(sa);
+        // Reset scored flag for new game
+        scored = false;
+      }
+    }
+
+    // Process actions while game is not terminal
     while (!inbox.isEmpty() && !rules.isTerminal(state)) {
       var a = inbox.poll();
       rules.apply(state, a);
       state.addAction(a);
     }
+
+    // Score the game when it reaches terminal state
     if (rules.isTerminal(state) && !scored) {
       rules.score(state);
       scored = true;
