@@ -403,8 +403,7 @@
                     <h1 style="color: #f8cf2c; font-size: 3em; margin-bottom: 20px;">🎉 GAME OVER 🎉</h1>
                     <div id="gameOverResults" style="font-size: 1.5em; margin-bottom: 30px; line-height: 1.8;"></div>
                     <div style="display: flex; gap: 20px; justify-content: center;">
-                        <button onclick="playAgain()" style="padding: 15px 40px; font-size: 1.2em; background: #f8cf2c; color: #15141a;">Play Again</button>
-                        <button onclick="closeGameOverOverlay()" style="padding: 15px 40px; font-size: 1.2em; background: #335155; color: #fff;">Close</button>
+                        <button onclick="closeGameOverOverlay()" style="padding: 15px 40px; font-size: 1.2em; background: #f8cf2c; color: #15141a;">Close</button>
                     </div>
                 </div>
             </div>
@@ -801,9 +800,13 @@
                 updateScoreboard();
             }
 
-            // Update start button
+            // Update start button - enable in LOBBY or TERMINATED phase
             const startBtn = document.getElementById('startGameBtn');
-            startBtn.disabled = gameState.phase !== 'LOBBY' || gameState.players.length < gameState.playerCount;
+            if (gameState.phase === 'TERMINATED') {
+                startBtn.disabled = false;
+            } else {
+                startBtn.disabled = gameState.phase !== 'LOBBY' || gameState.players.length < gameState.playerCount;
+            }
         }
 
         function renderHand(cards) {
@@ -1030,11 +1033,10 @@
 
             overlayContent.innerHTML += scoresHTML;
 
-            // Add buttons
+            // Add close button
             overlayContent.innerHTML += `
                 <div style="display: flex; gap: 20px; justify-content: center;">
-                    <button onclick="playAgain()" style="padding: 15px 40px; font-size: 1.2em; background: #f8cf2c; color: #15141a;">Play Again</button>
-                    <button onclick="closeGameOverOverlay()" style="padding: 15px 40px; font-size: 1.2em; background: #335155; color: #fff;">Close</button>
+                    <button onclick="closeGameOverOverlay()" style="padding: 15px 40px; font-size: 1.2em; background: #f8cf2c; color: #15141a;">Close</button>
                 </div>
             `;
 

@@ -84,11 +84,14 @@ public class GameController {
                   + instance.getState().players().size());
     }
 
-    if (instance.getState().phase() != GameState.Phase.LOBBY) {
-      return ResponseEntity.badRequest().body("Game already started");
+    // Allow starting from LOBBY or restarting from TERMINATED
+    if (instance.getState().phase() != GameState.Phase.LOBBY
+        && instance.getState().phase() != GameState.Phase.TERMINATED) {
+      return ResponseEntity.badRequest().body("Game already in progress");
     }
 
-    // Start the game
+    // Start or restart the game
+    boolean isRestart = instance.getState().phase() == GameState.Phase.TERMINATED;
     instance.loop().submit(new SystemAction("START", null));
     instance.loop().tick();
 
@@ -96,15 +99,18 @@ public class GameController {
     var response = GameInfo.from(instance.getState(), joinCode);
 
     // Log the state change
+    String action = isRestart ? "restarted" : "started";
     log.info(
-        "Game {} started - Phase: {}, Current Player: {}",
+        "Game {} {} - Phase: {}, Current Player: {}",
         gameId,
+        action,
         instance.getState().phase(),
         instance.getState().currentPlayerId());
 
     // Broadcast to all WebSocket clients
-    wsHandler.broadcastStateUpdate(
-        gameId, instance, "Game started - Phase: " + instance.getState().phase());
+    String message =
+        isRestart ? "New game started!" : "Game started - Phase: " + instance.getState().phase();
+    wsHandler.broadcastStateUpdate(gameId, instance, message);
 
     return ResponseEntity.ok(response);
   }

@@ -35,7 +35,8 @@ public final class DdzRules implements Rules {
       case LOBBY -> onStart(s, a); // expect SystemAction("START")
       case PLAY -> onPlay(s, a); // expect PlayerAction("PLAY", List<Card> or null for PASS)
       case BIDDING -> onBidOrSelectLandlord(s, a);
-      case SCORING, TERMINATED -> throw new IllegalStateException("Game over");
+      case SCORING -> throw new IllegalStateException("Game over");
+      case TERMINATED -> onRestart(s, a); // Allow restarting from terminated state
       default -> throw new IllegalStateException("Unsupported phase: " + s.phase());
     }
   }
@@ -149,6 +150,23 @@ public final class DdzRules implements Rules {
 
     System.out.println("Final scores: " + s.getScores());
     System.out.println("===============");
+  }
+
+  /* ====== RESTART → reset state and start a new game ====== */
+  private void onRestart(GameState s, GameAction a) {
+    if (!(a instanceof SystemAction sa) || !"START".equals(sa.type())) {
+      throw new IllegalArgumentException("Expected System START");
+    }
+
+    System.out.println("===============");
+    System.out.println("RESTARTING GAME: " + s.gameId());
+    System.out.println("===============");
+
+    // Reset all game state while keeping players
+    s.resetForNewGame();
+
+    // Now start a new game (deal cards, enter BIDDING)
+    onStart(s, a);
   }
 
   /* ====== START → deal cards, save bottom cards, enter BIDDING ====== */

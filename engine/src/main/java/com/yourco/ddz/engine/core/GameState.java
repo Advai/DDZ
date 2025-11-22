@@ -242,6 +242,54 @@ public final class GameState {
     return Collections.unmodifiableMap(playerConnected);
   }
 
+  /**
+   * Reset the game state to start a new game with the same players. Clears all game-specific state
+   * while preserving player list and metadata.
+   */
+  public void resetForNewGame() {
+    // Clear hands
+    for (UUID playerId : players) {
+      hands.put(playerId, new ArrayList<>());
+    }
+
+    // Reset phase
+    phase = Phase.LOBBY;
+
+    // Reset landlord info
+    landlordId = null;
+    landlordIds.clear();
+
+    // Reset current player
+    currentPlayerIndex = 0;
+
+    // Clear play state
+    currentLead = null;
+    currentLeadPlayer = null;
+    pass_count = 0;
+
+    // Clear bidding state
+    playerBids.clear();
+    biddingRoundCount = 0;
+    bottom.clear();
+
+    // Clear landlord selection state
+    awaitingLandlordSelection = null;
+    selectedLandlords.clear();
+
+    // Clear scoring state (per-game scores)
+    scores.clear();
+    bombsPlayed = 0;
+    rocketsPlayed = 0;
+    landlordPlayed = false;
+    farmersPlayed = false;
+
+    // Update timestamp
+    updatedAt = Instant.now();
+
+    // Clear action log
+    actionLog.clear();
+  }
+
   public void addPlayer(UUID playerId, String name) {
     if (!players.contains(playerId)) {
       players.add(playerId);
