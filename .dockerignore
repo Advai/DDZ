@@ -1,0 +1,74 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Build outputs
+build/
+**/build/
+.gradle/
+out/
+target/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+/tmp/
+*.tmp
+
+# Documentation (not needed in container)
+*.md
+!DEPLOYMENT.md
+docs/
+BUG_FIXES*.md
+CARD_DISPLAY*.md
+COLOR_SCHEME*.md
+CRITICAL_FIXES.md
+FIXES_APPLIED.md
+GAME_OVER*.md
+PR_DESCRIPTION.md
+
+# Test files (already excluded via -x test in Dockerfile)
+**/*Test.java
+**/*Tests.java
+**/test/
+
+# Scripts (not needed in container)
+*.sh
+!deploy.sh
+
+# Environment files
+.env
+.env.*
+
+# Temporary build artifacts
+*.jar.original
+*.class
+bin/
+
+# Docker files (no need to copy into image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# fly.io files
+fly.toml
+
+# Misc
+node_modules/
+npm-debug.log

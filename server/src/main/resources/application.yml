@@ -1,4 +1,16 @@
-server: { port: 8080 }
+server:
+  port: 8080
+  # Serve static web files
+  forward-headers-strategy: framework
+
+spring:
+  web:
+    resources:
+      static-locations: file:./web/,classpath:/static/
+      add-mappings: true
+  mvc:
+    static-path-pattern: /**
+
 management:
   endpoints:
     web:
