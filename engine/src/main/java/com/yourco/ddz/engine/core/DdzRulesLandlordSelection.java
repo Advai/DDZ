@@ -59,20 +59,35 @@ public class DdzRulesLandlordSelection {
   public static void distributeLandlordCards(GameState s, List<UUID> landlords) {
     s.setLandlordIds(landlords);
 
-    System.out.println("=== BOTTOM CARD DISTRIBUTION ===");
-    System.out.println("Landlords: ");
+    System.out.println("\n=== BOTTOM CARD DISTRIBUTION ===");
+    System.out.println("Landlords (" + landlords.size() + " total):");
     for (UUID landlord : landlords) {
       System.out.println("  - " + s.getPlayerName(landlord));
     }
 
     // Distribute bottom cards evenly among landlords
     var bottom = new ArrayList<>(s.bottom());
+    System.out.println("Bottom cards (" + bottom.size() + " total): " + bottom);
+
     int cardsPerLandlord = bottom.size() / landlords.size();
     int remainder = bottom.size() % landlords.size();
+    System.out.println(
+        "Distribution: " + cardsPerLandlord + " cards per landlord, " + remainder + " extra");
 
     for (int i = 0; i < landlords.size(); i++) {
       UUID landlord = landlords.get(i);
       int cardsToGive = cardsPerLandlord + (i < remainder ? 1 : 0);
+
+      System.out.println(
+          "\n--- Distributing to "
+              + s.getPlayerName(landlord)
+              + " (landlord "
+              + (i + 1)
+              + "/"
+              + landlords.size()
+              + ") ---");
+      System.out.println("Cards to give: " + cardsToGive);
+      System.out.println("Cards remaining in bottom pile: " + bottom.size());
 
       List<Card> landlordBottomCards = new ArrayList<>();
       for (int j = 0; j < cardsToGive; j++) {
@@ -81,11 +96,16 @@ public class DdzRulesLandlordSelection {
         }
       }
 
+      int handSizeBefore = s.handOf(landlord).size();
       s.handOf(landlord).addAll(landlordBottomCards);
       Collections.sort(s.handOf(landlord), Comparator.comparing(Card::rank));
+      int handSizeAfter = s.handOf(landlord).size();
 
-      System.out.println(s.getPlayerName(landlord) + " received " + landlordBottomCards);
+      System.out.println("Cards given: " + landlordBottomCards);
+      System.out.println("Hand size: " + handSizeBefore + " -> " + handSizeAfter);
     }
+
+    System.out.println("\nBottom cards remaining: " + bottom.size() + " (should be 0)");
 
     // Primary landlord (first in list) starts the game
     UUID primaryLandlord = landlords.get(0);

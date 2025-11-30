@@ -10,12 +10,13 @@ public record GameInfo(
     int playerCount,
     String phase,
     String currentPlayer,
-    String yourPlayerId) {
-  public static GameInfo from(GameState state, String joinCode) {
-    return from(state, joinCode, null);
+    String yourPlayerId,
+    int maxBid) {
+  public static GameInfo from(GameState state, String joinCode, int maxBid) {
+    return from(state, joinCode, null, maxBid);
   }
 
-  public static GameInfo from(GameState state, String joinCode, String yourPlayerId) {
+  public static GameInfo from(GameState state, String joinCode, String yourPlayerId, int maxBid) {
     return new GameInfo(
         state.gameId(),
         joinCode,
@@ -23,6 +24,7 @@ public record GameInfo(
         state.players().size(), // TODO: track max separately for lobby
         state.phase().name(),
         state.currentPlayerId() != null ? state.currentPlayerId().toString() : null,
-        yourPlayerId);
+        yourPlayerId,
+        maxBid);
   }
 }

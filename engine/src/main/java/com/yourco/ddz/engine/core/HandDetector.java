@@ -63,7 +63,9 @@ public final class HandDetector implements PlayDetector {
         List.of(
             // Patterns ordered from most specific to least specific
             new RocketPattern(), // Must be checked first - both jokers
-            new BombPattern(), // 4 of a kind
+            new BombWithPairsPattern(), // Bomb + 2 pairs (more specific than plain bomb)
+            new BombWithSinglesPattern(), // Bomb + 2 singles (more specific than plain bomb)
+            new BombPattern(), // Plain bomb (4+ of a kind)
             new AirplaneWithPairsPattern(), // Most complex airplane variant
             new AirplaneWithSinglesPattern(), // Airplane with singles
             new AirplanePattern(), // Plain airplane (consecutive triples)
@@ -113,11 +115,11 @@ final class SinglePattern implements Card.HandPattern {
   }
 }
 
-// BOMB: 4 cards of the same rank
+// BOMB: 4+ cards of the same rank (multi-deck games support 5, 6, 7, 8+ card bombs)
 final class BombPattern implements Card.HandPattern {
   @Override
   public Optional<PlayedHand> match(List<Card> cards) {
-    if (cards.size() != 4) return Optional.empty();
+    if (cards.size() < 4) return Optional.empty();
     var rankCounts = HandUtil.countByRank(cards);
     if (rankCounts.size() == 1) {
       var rank = rankCounts.keySet().iterator().next();
@@ -126,6 +128,88 @@ final class BombPattern implements Card.HandPattern {
         return Optional.of(new PlayedHand(ComboType.BOMB, cards));
       }
     }
+    return Optional.empty();
+  }
+}
+
+// BOMB_WITH_SINGLES: Bomb (4+ of a kind) + 2 singles
+// Example: 7-7-7-7-3-5 (4-bomb + 2 singles) or 7-7-7-7-7-3-5 (5-bomb + 2 singles)
+// Note: Does NOT count for bomb multiplier
+final class BombWithSinglesPattern implements Card.HandPattern {
+  @Override
+  public Optional<PlayedHand> match(List<Card> cards) {
+    if (cards.size() < 6) return Optional.empty(); // Minimum: 4-bomb + 2 singles
+    var rankCounts = HandUtil.countByRank(cards);
+
+    // Need at least 3 ranks: bomb rank + 2 different singles
+    if (rankCounts.size() < 3) return Optional.empty();
+
+    // Find bomb (4+ of same rank)
+    var bombRank =
+        rankCounts.entrySet().stream()
+            .filter(e -> e.getValue() >= 4)
+            .map(Map.Entry::getKey)
+            .findFirst();
+
+    if (bombRank.isEmpty()) return Optional.empty();
+
+    // Check that remaining cards are 2 singles (each appears once)
+    long bombCount = rankCounts.get(bombRank.get());
+    long expectedTotalCards = bombCount + 2; // bomb + 2 singles
+
+    if (cards.size() != expectedTotalCards) return Optional.empty();
+
+    // Count singles (ranks that appear exactly once)
+    long singleCount =
+        rankCounts.entrySet().stream()
+            .filter(e -> !e.getKey().equals(bombRank.get()) && e.getValue() == 1)
+            .count();
+
+    if (singleCount == 2) {
+      return Optional.of(new PlayedHand(ComboType.BOMB_WITH_SINGLES, cards));
+    }
+
+    return Optional.empty();
+  }
+}
+
+// BOMB_WITH_PAIRS: Bomb (4+ of a kind) + 2 pairs
+// Example: 7-7-7-7-3-3-4-4 (4-bomb + 2 pairs) or 7-7-7-7-7-3-3-4-4 (5-bomb + 2 pairs)
+// Note: Does NOT count for bomb multiplier
+final class BombWithPairsPattern implements Card.HandPattern {
+  @Override
+  public Optional<PlayedHand> match(List<Card> cards) {
+    if (cards.size() < 8) return Optional.empty(); // Minimum: 4-bomb + 2 pairs (4+2+2)
+    var rankCounts = HandUtil.countByRank(cards);
+
+    // Need at least 3 ranks: bomb rank + 2 different pairs
+    if (rankCounts.size() < 3) return Optional.empty();
+
+    // Find bomb (4+ of same rank)
+    var bombRank =
+        rankCounts.entrySet().stream()
+            .filter(e -> e.getValue() >= 4)
+            .map(Map.Entry::getKey)
+            .findFirst();
+
+    if (bombRank.isEmpty()) return Optional.empty();
+
+    // Check that remaining cards are 2 pairs (each appears twice)
+    long bombCount = rankCounts.get(bombRank.get());
+    long expectedTotalCards = bombCount + 4; // bomb + 2 pairs (2+2)
+
+    if (cards.size() != expectedTotalCards) return Optional.empty();
+
+    // Count pairs (ranks that appear exactly twice)
+    long pairCount =
+        rankCounts.entrySet().stream()
+            .filter(e -> !e.getKey().equals(bombRank.get()) && e.getValue() == 2)
+            .count();
+
+    if (pairCount == 2) {
+      return Optional.of(new PlayedHand(ComboType.BOMB_WITH_PAIRS, cards));
+    }
+
     return Optional.empty();
   }
 }

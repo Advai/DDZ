@@ -65,20 +65,25 @@ public class DdzRulesBidding {
 
     if (highestBidders.size() == 1) {
       primaryLandlord = highestBidders.get(0);
-      System.out.println("Single highest bidder: " + s.getPlayerName(primaryLandlord));
+      System.out.println("\n========================================");
+      System.out.println("PRIMARY LANDLORD: " + s.getPlayerName(primaryLandlord));
+      System.out.println("(Single highest bidder)");
+      System.out.println("========================================\n");
     } else {
       // Multiple players with highest bid - random selection
       Random random = new Random();
       int winnerIndex = random.nextInt(highestBidders.size());
       primaryLandlord = highestBidders.get(winnerIndex);
 
-      System.out.println("=== ROCK PAPER SCISSORS ===");
-      System.out.println("Highest bidders (" + s.getHighestBid() + "):");
+      System.out.println("\n========================================");
+      System.out.println("=== BID TIE - RANDOM SELECTION ===");
+      System.out.println("Highest bidders (" + s.getHighestBid() + " points):");
       for (UUID bidder : highestBidders) {
         System.out.println("  - " + s.getPlayerName(bidder));
       }
-      System.out.println("Random winner: " + s.getPlayerName(primaryLandlord));
-      System.out.println("===========================\n");
+      System.out.println("\nPRIMARY LANDLORD: " + s.getPlayerName(primaryLandlord));
+      System.out.println("(Selected randomly)");
+      System.out.println("========================================\n");
     }
 
     initializeLandlordSelection(s, primaryLandlord, config);

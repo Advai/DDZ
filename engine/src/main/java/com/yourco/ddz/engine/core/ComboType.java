@@ -14,6 +14,8 @@ public enum ComboType {
   AIRPLANE_WITH_SINGLES, // airplane + equal singles
   AIRPLANE_WITH_PAIRS, // airplane + equal pairs
 
-  BOMB, // xxxx
+  BOMB, // xxxx (or more in multi-deck games) - pure bomb, counts for multiplier
+  BOMB_WITH_SINGLES, // bomb + 2 singles (3-4 player only, no multiplier bonus)
+  BOMB_WITH_PAIRS, // bomb + 2 pairs (all player counts, no multiplier bonus)
   ROCKET // little joker + big joker
 }

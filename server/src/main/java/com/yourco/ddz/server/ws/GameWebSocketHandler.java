@@ -30,6 +30,9 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
   // Track player ID per session
   private final Map<String, UUID> sessionPlayerIds = new ConcurrentHashMap<>();
 
+  // Track test mode per game
+  private final Map<String, Boolean> gameTestMode = new ConcurrentHashMap<>();
+
   public GameWebSocketHandler(GameRegistry r, ObjectMapper om) {
     this.registry = r;
     this.objectMapper = om;
@@ -64,11 +67,20 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
       }
     }
 
-    log.info("WebSocket connected - gameId: {}, playerId: {}", gameId, playerId);
+    // Check for test mode parameter
+    boolean testMode = extractTestMode(session);
+    if (testMode) {
+      gameTestMode.put(gameId, true);
+      log.info("Test mode enabled for game {}", gameId);
+    }
+
+    log.info(
+        "WebSocket connected - gameId: {}, playerId: {}, testMode: {}", gameId, playerId, testMode);
 
     // Send current game state to the newly connected client
     if (playerId != null) {
-      GameStateResponse stateResponse = GameStateResponse.from(game.loop().state(), playerId);
+      GameStateResponse stateResponse =
+          GameStateResponse.from(game.loop().state(), playerId, game.getMaxBid());
       sendMessage(session, new GameUpdateMessage(stateResponse, "Connected to game " + gameId));
     } else {
       sendMessage(session, new GameUpdateMessage(null, "Connected to game " + gameId));
@@ -203,7 +215,8 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
           sendMessage(session, new GameUpdateMessage(null, message));
         } else {
           // Send personalized state (with player's hand)
-          GameStateResponse stateResponse = GameStateResponse.from(state, playerId);
+          GameStateResponse stateResponse =
+              GameStateResponse.from(state, playerId, game.getMaxBid());
           sendMessage(session, new GameUpdateMessage(stateResponse, message));
         }
       } catch (Exception e) {
@@ -253,6 +266,23 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     return null;
   }
 
+  private boolean extractTestMode(WebSocketSession session) {
+    URI uri = session.getUri();
+    if (uri == null) return false;
+
+    String query = uri.getQuery();
+    if (query == null) return false;
+
+    // Parse query string for testMode parameter
+    for (String param : query.split("&")) {
+      String[] kv = param.split("=");
+      if (kv.length == 2 && "testMode".equals(kv[0])) {
+        return "true".equalsIgnoreCase(kv[1]);
+      }
+    }
+    return false;
+  }
+
   /**
    * Handles auto-pass/auto-bid for disconnected players during their turn.
    *
@@ -261,6 +291,12 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
    * - In landlord selection: randomly selects next landlord
    */
   private void handleDisconnectedPlayerTurn(GameInstance game, String gameId) {
+    // Skip auto-play in test mode (players switching)
+    if (Boolean.TRUE.equals(gameTestMode.get(gameId))) {
+      log.debug("Skipping auto-play for game {} (test mode enabled)", gameId);
+      return;
+    }
+
     synchronized (game.loop()) {
       GameState state = game.loop().state();
       UUID currentPlayer = state.currentPlayerId();
