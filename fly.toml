@@ -30,30 +30,6 @@ primary_region = "ord"  # Chicago - change to region closest to you
     method = "GET"
     path = "/actuator/health"
 
-[[services]]
-  protocol = "tcp"
-  internal_port = 8080
-  processes = ["app"]
-
-  [[services.ports]]
-    port = 80
-    handlers = ["http"]
-    force_https = true
-
-  [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
-
-  [services.concurrency]
-    type = "connections"
-    hard_limit = 1000
-    soft_limit = 800
-
-[[ services.tcp_checks]]
-    interval = "15s"
-    timeout = "2s"
-    grace_period = "10s"
-
 # VM Resources - using free tier
 # Fly.io free tier: 3 shared-cpu-1x VMs with 256MB RAM each
 [vm]

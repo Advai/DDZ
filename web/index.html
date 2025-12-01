@@ -929,14 +929,23 @@
         }
 
         function connectWebSocket() {
+            // Use config.js WS_URL if available, otherwise fall back to manual construction
             const serverUrl = document.getElementById('serverUrl').value;
-            const wsUrl = serverUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+            const wsUrl = window.DDZ_CONFIG && window.DDZ_CONFIG.WS_URL
+                ? window.DDZ_CONFIG.WS_URL
+                : serverUrl.replace('http://', 'ws://').replace('https://', 'wss://');
 
             // Add testMode parameter if in test mode
             const testModeParam = testMode ? '&testMode=true' : '';
-            ws = new WebSocket(`${wsUrl}/ws/game/${currentGameId}?playerId=${myPlayerId}${testModeParam}`);
+            const wsFullUrl = `${wsUrl}/ws/game/${currentGameId}?playerId=${myPlayerId}${testModeParam}`;
+
+            console.log('🔌 Attempting WebSocket connection:', wsFullUrl);
+            log(`Connecting to game via WebSocket...`, 'info');
+
+            ws = new WebSocket(wsFullUrl);
 
             ws.onopen = () => {
+                console.log('✅ WebSocket connection established');
                 log('✅ WebSocket connected to game', 'success');
                 document.getElementById('connectionStatus').className = 'status connected';
                 document.getElementById('connectionStatus').textContent = 'Connected';
@@ -947,15 +956,16 @@
                 handleWebSocketMessage(message);
             };
 
-            ws.onclose = () => {
-                log('❌ WebSocket disconnected', 'error');
+            ws.onclose = (event) => {
+                console.log('❌ WebSocket connection closed:', event.code, event.reason);
+                log(`❌ WebSocket disconnected (code: ${event.code})`, 'error');
                 document.getElementById('connectionStatus').className = 'status disconnected';
                 document.getElementById('connectionStatus').textContent = 'Disconnected';
             };
 
             ws.onerror = (error) => {
-                log(`❌ WebSocket error: ${error}`, 'error');
-                console.error('WebSocket error:', error);
+                console.error('❌ WebSocket error:', error);
+                log(`❌ WebSocket error - check console for details`, 'error');
             };
         }
 
