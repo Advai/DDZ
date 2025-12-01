@@ -244,6 +244,22 @@ public final class DdzRules implements Rules {
     if (maybe.isEmpty()) throw new IllegalStateException("Invalid combo");
     var hand = maybe.get();
 
+    // Validate kicker rules for 5+ player games
+    if (config.getPlayerCount() >= 5) {
+      if (hand.type() == ComboType.TRIPLE_WITH_SINGLE) {
+        throw new IllegalStateException(
+            "Single kickers not allowed in 5+ player games. Use TRIPLE_WITH_PAIR instead.");
+      }
+      if (hand.type() == ComboType.AIRPLANE_WITH_SINGLES) {
+        throw new IllegalStateException(
+            "Single kickers not allowed in 5+ player games. Use AIRPLANE_WITH_PAIRS instead.");
+      }
+      if (hand.type() == ComboType.BOMB_WITH_SINGLES) {
+        throw new IllegalStateException(
+            "Single kickers not allowed in 5+ player games. Use BOMB_WITH_PAIRS instead.");
+      }
+    }
+
     // Own the cards
     System.out.println("hand of pa " + pa.playerId() + ": " + s.handOf(pa.playerId()));
     System.out.println("Hand Type: " + hand.type());
@@ -266,12 +282,16 @@ public final class DdzRules implements Rules {
     s.setPassesInRow(0);
 
     // Track bombs and rockets for scoring
+    // Note: Only PURE bombs count for multiplier, not bombs with kickers
     if (hand.type() == ComboType.BOMB) {
       s.incrementBombsPlayed();
-      System.out.println("BOMB played! Total bombs: " + s.getBombsPlayed());
+      System.out.println("PURE BOMB played! Total bombs: " + s.getBombsPlayed());
     } else if (hand.type() == ComboType.ROCKET) {
       s.incrementRocketsPlayed();
       System.out.println("ROCKET played! Total rockets: " + s.getRocketsPlayed());
+    } else if (hand.type() == ComboType.BOMB_WITH_SINGLES
+        || hand.type() == ComboType.BOMB_WITH_PAIRS) {
+      System.out.println("BOMB WITH KICKERS played (does not count for multiplier)");
     }
 
     // Track first play for spring/anti-spring detection

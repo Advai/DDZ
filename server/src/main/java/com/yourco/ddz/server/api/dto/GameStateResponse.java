@@ -17,9 +17,12 @@ public record GameStateResponse(
     Integer bombsPlayed,
     Integer rocketsPlayed,
     Integer currentBet,
-    Integer multiplier) {
+    Integer multiplier,
+    Integer maxBid,
+    List<String> landlordIds,
+    String awaitingLandlordSelection) {
 
-  public static GameStateResponse from(GameState state, UUID requestingPlayerId) {
+  public static GameStateResponse from(GameState state, UUID requestingPlayerId, int maxBid) {
     // Convert scores to string keys
     Map<String, Integer> scoresMap =
         state.getScores().entrySet().stream()
@@ -29,6 +32,15 @@ public record GameStateResponse(
     int currentBet = state.getHighestBid();
     int multiplier =
         currentBet * (int) Math.pow(2, state.getBombsPlayed() + state.getRocketsPlayed());
+
+    // Convert landlord IDs to strings
+    List<String> landlordIds = state.getLandlordIds().stream().map(UUID::toString).toList();
+
+    // Get awaiting landlord selection (if any)
+    String awaitingLandlordSelection =
+        state.getAwaitingLandlordSelection() != null
+            ? state.getAwaitingLandlordSelection().toString()
+            : null;
 
     return new GameStateResponse(
         state.gameId(),
@@ -41,6 +53,9 @@ public record GameStateResponse(
         state.getBombsPlayed(),
         state.getRocketsPlayed(),
         currentBet,
-        multiplier);
+        multiplier,
+        maxBid,
+        landlordIds,
+        awaitingLandlordSelection);
   }
 }

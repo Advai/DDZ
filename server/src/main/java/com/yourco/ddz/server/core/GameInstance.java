@@ -38,6 +38,14 @@ public record GameInstance(String gameId, GameLoop loop, int maxPlayers) {
     return loop.state();
   }
 
+  public DdzRules getRules() {
+    return (DdzRules) loop.rules();
+  }
+
+  public int getMaxBid() {
+    return getRules().getConfig().getMaxBid();
+  }
+
   public boolean isFull() {
     return getState().players().size() >= maxPlayers;
   }

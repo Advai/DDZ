@@ -4,7 +4,13 @@ import com.yourco.ddz.engine.core.GameState;
 import java.util.UUID;
 
 public record PlayerInfo(
-    String id, String name, int cardCount, boolean isLandlord, boolean isConnected, int score) {
+    String id,
+    String name,
+    int cardCount,
+    boolean isLandlord,
+    boolean isConnected,
+    int score,
+    int bid) {
   public static PlayerInfo from(GameState state, UUID playerId) {
     return new PlayerInfo(
         playerId.toString(),
@@ -12,6 +18,7 @@ public record PlayerInfo(
         state.handOf(playerId).size(),
         state.isLandlord(playerId),
         state.isPlayerConnected(playerId),
-        state.getScores().getOrDefault(playerId, 0));
+        state.getScores().getOrDefault(playerId, 0),
+        state.getPlayerBid(playerId));
   }
 }

@@ -30,16 +30,29 @@ public final class SimplePlayComparator implements PlayComparator {
       return -1; // b wins
     }
 
-    // BOMB vs BOMB: compare by rank
-    if (a.type() == ComboType.BOMB && b.type() == ComboType.BOMB) {
-      return Integer.compare(getHighestRank(a), getHighestRank(b));
+    // Check if hands are bomb-type (BOMB, BOMB_WITH_SINGLES, BOMB_WITH_PAIRS)
+    boolean aIsBomb = isBombType(a.type());
+    boolean bIsBomb = isBombType(b.type());
+
+    // BOMB vs BOMB: compare by bomb size first, then by rank
+    if (aIsBomb && bIsBomb) {
+      int aBombSize = getBombSize(a);
+      int bBombSize = getBombSize(b);
+
+      // Larger bombs beat smaller bombs
+      if (aBombSize != bBombSize) {
+        return Integer.compare(aBombSize, bBombSize);
+      }
+
+      // Same size bombs compared by rank
+      return Integer.compare(getPrimaryRank(a), getPrimaryRank(b));
     }
 
     // BOMB beats non-bomb
-    if (a.type() == ComboType.BOMB) {
+    if (aIsBomb) {
       return 1; // a wins
     }
-    if (b.type() == ComboType.BOMB) {
+    if (bIsBomb) {
       return -1; // b wins
     }
 
@@ -64,6 +77,44 @@ public final class SimplePlayComparator implements PlayComparator {
   }
 
   /**
+   * Check if a combo type is a bomb variant.
+   *
+   * @param type the combo type
+   * @return true if it's a bomb type
+   */
+  private boolean isBombType(ComboType type) {
+    return type == ComboType.BOMB
+        || type == ComboType.BOMB_WITH_SINGLES
+        || type == ComboType.BOMB_WITH_PAIRS;
+  }
+
+  /**
+   * Get the size of the bomb itself (excluding kickers).
+   *
+   * @param hand the played hand (must be a bomb type)
+   * @return number of cards in the bomb
+   */
+  private int getBombSize(PlayedHand hand) {
+    return switch (hand.type()) {
+      case BOMB -> hand.cards().size(); // Pure bomb
+      case BOMB_WITH_SINGLES, BOMB_WITH_PAIRS -> {
+        // Find the rank that appears 4+ times (the bomb)
+        var rankCounts =
+            hand.cards().stream()
+                .collect(
+                    java.util.stream.Collectors.groupingBy(
+                        Card::rank, java.util.stream.Collectors.counting()));
+        yield rankCounts.values().stream()
+            .filter(count -> count >= 4)
+            .mapToInt(Long::intValue)
+            .findFirst()
+            .orElseThrow();
+      }
+      default -> throw new IllegalArgumentException("Not a bomb type: " + hand.type());
+    };
+  }
+
+  /**
    * Get the highest rank in the hand (simple max).
    *
    * @param hand the played hand
@@ -81,7 +132,7 @@ public final class SimplePlayComparator implements PlayComparator {
    * Get the primary rank for comparison purposes.
    *
    * <p>For most hands, this is the highest rank. For combo hands with kickers (TRIPLE_WITH_SINGLE,
-   * TRIPLE_WITH_PAIR, AIRPLANE_WITH_*), this extracts the rank of the main component.
+   * TRIPLE_WITH_PAIR, AIRPLANE_WITH_*, BOMB_WITH_*), this extracts the rank of the main component.
    *
    * @param hand the played hand
    * @return ordinal of primary rank
@@ -112,6 +163,19 @@ public final class SimplePlayComparator implements PlayComparator {
             .filter(e -> e.getValue() == 3)
             .map(e -> e.getKey().ordinal())
             .max(Integer::compare)
+            .orElseThrow();
+      }
+      case BOMB_WITH_SINGLES, BOMB_WITH_PAIRS -> {
+        // Find the rank that appears 4+ times (the bomb)
+        var rankCounts =
+            hand.cards().stream()
+                .collect(
+                    java.util.stream.Collectors.groupingBy(
+                        Card::rank, java.util.stream.Collectors.counting()));
+        yield rankCounts.entrySet().stream()
+            .filter(e -> e.getValue() >= 4)
+            .map(e -> e.getKey().ordinal())
+            .findFirst()
             .orElseThrow();
       }
       default -> getHighestRank(hand); // For all other types, use highest rank
