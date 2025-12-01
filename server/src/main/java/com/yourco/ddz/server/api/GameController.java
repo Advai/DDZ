@@ -74,16 +74,25 @@ public class GameController {
     var instance = registry.get(gameId);
 
     if (instance == null) {
+      log.error("Cannot start game - game not found: {}", gameId);
       return ResponseEntity.notFound().build();
     }
 
+    int currentPlayers = instance.getState().players().size();
+    int requiredPlayers = instance.maxPlayers();
+
+    log.info(
+        "Start game request for {} - Current players: {}, Required: {}, Can start: {}",
+        gameId,
+        currentPlayers,
+        requiredPlayers,
+        instance.canStart());
+
     if (!instance.canStart()) {
-      return ResponseEntity.badRequest()
-          .body(
-              "Cannot start game. Need "
-                  + instance.maxPlayers()
-                  + " players, have "
-                  + instance.getState().players().size());
+      String errorMsg =
+          "Cannot start game. Need " + requiredPlayers + " players, have " + currentPlayers;
+      log.warn("Cannot start game {}: {}", gameId, errorMsg);
+      return ResponseEntity.badRequest().body(errorMsg);
     }
 
     // Allow starting from LOBBY or restarting from TERMINATED
