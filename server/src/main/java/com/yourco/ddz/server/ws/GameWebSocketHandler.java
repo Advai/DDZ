@@ -72,6 +72,14 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     if (testMode) {
       gameTestMode.put(gameId, true);
       log.info("Test mode enabled for game {}", gameId);
+
+      // In test mode, mark ALL players as connected (allows single user to control all)
+      synchronized (game.loop()) {
+        for (UUID pid : game.loop().state().players()) {
+          game.loop().state().setPlayerConnected(pid, true);
+        }
+      }
+      log.info("Marked all players as connected for test mode in game {}", gameId);
     }
 
     log.info(
@@ -146,8 +154,11 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         }
       }
 
-      // Mark player as disconnected in game state
-      if (playerId != null) {
+      // In test mode, don't mark players as disconnected (allows player switching)
+      boolean isTestMode = Boolean.TRUE.equals(gameTestMode.get(gameId));
+
+      // Mark player as disconnected in game state (unless in test mode)
+      if (playerId != null && !isTestMode) {
         GameInstance game = registry.get(gameId);
         if (game != null) {
           synchronized (game.loop()) {
@@ -159,6 +170,9 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
           // Handle auto-pass for disconnected player if it's their turn
           handleDisconnectedPlayerTurn(game, gameId);
         }
+      } else if (playerId != null && isTestMode) {
+        log.info(
+            "Player {} closed connection in test mode (not marking as disconnected)", playerId);
       }
     }
 
