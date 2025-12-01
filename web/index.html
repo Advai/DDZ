@@ -268,6 +268,8 @@
             border: 1px solid rgba(171, 32, 42, 0.5);
         }
     </style>
+    <!-- Configuration file for backend URL -->
+    <script src="config.js"></script>
 </head>
 <body>
     <div class="container">
@@ -719,6 +721,14 @@
             logDiv.appendChild(entry);
             logDiv.scrollTop = logDiv.scrollHeight;
         }
+
+        // Initialize server URL from config when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.DDZ_CONFIG && window.DDZ_CONFIG.BACKEND_URL) {
+                document.getElementById('serverUrl').value = window.DDZ_CONFIG.BACKEND_URL;
+                console.log('Server URL initialized from config:', window.DDZ_CONFIG.BACKEND_URL);
+            }
+        });
 
         async function quickTest(playerCount) {
             const serverUrl = document.getElementById('serverUrl').value;

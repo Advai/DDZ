@@ -89,6 +89,40 @@ http://localhost:3000
 
 ---
 
+## Deployment to Production
+
+Want to play with friends online? Deploy the game to the cloud!
+
+### Quick Deploy (5 minutes)
+
+```bash
+# Test with Docker locally first
+./test-docker.sh
+
+# Deploy to Fly.io (free tier)
+./deploy-flyio.sh
+```
+
+### Full Deployment Guide
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for comprehensive deployment instructions including:
+- ✅ Docker setup and local testing
+- ✅ Fly.io deployment (recommended - free tier)
+- ✅ Alternative platforms (Railway, Render, VPS)
+- ✅ Custom domain setup
+- ✅ Troubleshooting guide
+
+### Deployment Options
+
+| Platform | Cost | Setup Time | Best For |
+|----------|------|------------|----------|
+| **Fly.io** | Free | 5 min | Playing with friends (recommended) |
+| Railway | Free | 5 min | Auto-deploy from GitHub |
+| Render | Free | 10 min | Simple free hosting |
+| VPS | $5/mo | 30 min | Full control |
+
+---
+
 ## Project Structure
 
 ```
@@ -103,9 +137,23 @@ DDZ/
 │       ├── main/java/   # REST API + WebSocket
 │       └── test/java/   # 8 passing tests
 │
-└── web/                 # Frontend client
-    ├── index.html       # Single-page web app
-    └── README.md        # Detailed frontend docs
+├── web/                 # Frontend client
+│   ├── index.html       # Single-page web app
+│   ├── config.js        # Backend URL configuration
+│   └── README.md        # Detailed frontend docs
+│
+├── Dockerfile           # Docker image definition
+├── docker-compose.yml   # Local Docker setup
+├── fly.toml             # Fly.io deployment config
+├── .dockerignore        # Docker build exclusions
+│
+├── start-servers.sh     # Start dev servers
+├── stop-servers.sh      # Stop dev servers
+├── test-docker.sh       # Test Docker build locally
+├── deploy-flyio.sh      # Deploy to Fly.io
+│
+├── DEPLOYMENT.md        # Full deployment guide
+└── README.md            # This file
 ```
 
 ---
