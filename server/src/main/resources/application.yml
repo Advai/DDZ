@@ -1,5 +1,6 @@
 server:
   port: 8080
+  address: 0.0.0.0  # Bind to all interfaces for Fly.io
   # Serve static web files
   forward-headers-strategy: framework
   # Tomcat configuration for WebSocket support
