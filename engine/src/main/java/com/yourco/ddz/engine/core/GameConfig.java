@@ -159,9 +159,12 @@ public final class GameConfig {
     return switch (playerCount) {
       case 3 -> 3;
       case 4, 5, 6 -> 6;
-      case 7 -> 5;
-      case 8 -> 8;
-      case 9, 10, 11, 12 -> playerCount; // 9, 10, 11, 12 respectively
+      case 7 -> 6; // Increased from 5 to compensate for distributed bombs
+      case 8 -> 15; // High base to compensate for very rare bombs (18 landlord cards)
+      case 9 -> 6; // Standardized from 9
+      case 10 -> 7; // Moderate increase from 10
+      case 11 -> 6; // Standardized from 11
+      case 12 -> 6; // Standardized from 12
       default -> throw new IllegalArgumentException("Player count must be 3-12");
     };
   }

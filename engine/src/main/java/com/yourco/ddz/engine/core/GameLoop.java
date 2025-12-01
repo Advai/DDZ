@@ -17,6 +17,10 @@ public final class GameLoop {
     return state;
   }
 
+  public Rules rules() {
+    return rules;
+  }
+
   public void submit(GameAction a) {
     inbox.add(a);
   }

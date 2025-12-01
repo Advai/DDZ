@@ -277,6 +277,10 @@
 
         <!-- Connection Setup -->
         <div id="setupPanel" class="panel">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button onclick="showRulesModal()" style="background: #335155; color: #f8cf2c; width: auto; padding: 12px 30px; display: inline-block;">📖 Game Rules</button>
+            </div>
+
             <h2>Setup</h2>
 
             <div class="form-group">
@@ -289,6 +293,15 @@
                 <input type="text" id="playerName" placeholder="Enter your name">
             </div>
 
+            <h3 style="margin-top: 20px;">🧪 Quick Test (Auto-fill Players)</h3>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+                <button onclick="quickTest(3)" style="background: #ab202a;">3P Test</button>
+                <button onclick="quickTest(4)" style="background: #ab202a;">4P Test</button>
+                <button onclick="quickTest(5)" style="background: #ab202a;">5P Test</button>
+                <button onclick="quickTest(6)" style="background: #ab202a;">6P Test</button>
+                <button onclick="quickTest(7)" style="background: #ab202a;">7P Test</button>
+            </div>
+
             <h3 style="margin-top: 20px;">Create New Game</h3>
             <div class="form-group">
                 <label>Number of Players:</label>
@@ -296,6 +309,8 @@
                     <option value="3">3 Players</option>
                     <option value="4">4 Players</option>
                     <option value="5">5 Players</option>
+                    <option value="6">6 Players</option>
+                    <option value="7">7 Players</option>
                 </select>
             </div>
             <button onclick="createGame()">Create Game</button>
@@ -310,6 +325,19 @@
 
         <!-- Game Panel -->
         <div id="gamePanel" class="panel hidden">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button onclick="showRulesModal()" style="background: #335155; color: #f8cf2c; width: auto; padding: 12px 30px; display: inline-block;">📖 Game Rules</button>
+            </div>
+
+            <!-- Test Mode Player Switcher -->
+            <div id="playerSwitcher" class="hidden" style="background: rgba(171, 32, 42, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px solid #ab202a;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <strong style="color: #f8cf2c;">🧪 Test Mode - Control Player:</strong>
+                    <select id="controlPlayerSelect" onchange="switchControlPlayer()" style="flex: 1; max-width: 300px;">
+                    </select>
+                </div>
+            </div>
+
             <div id="connectionStatus" class="status disconnected">Disconnected</div>
 
             <h2>Game Info</h2>
@@ -325,6 +353,9 @@
                 </div>
                 <div class="info-box">
                     <strong>Phase:</strong> <span id="gamePhase">-</span>
+                </div>
+                <div class="info-box" id="roleBox" style="display: none;">
+                    <strong>Your Role:</strong> <span id="playerRole">-</span>
                 </div>
             </div>
 
@@ -368,18 +399,13 @@
             <div id="biddingPanel" style="background: rgba(51, 81, 85, 0.4); padding: 20px; border-radius: 8px; margin-top: 20px; border: 2px solid rgba(248, 207, 44, 0.3);">
                 <h3 style="color: #f8cf2c;">💰 Bidding Phase</h3>
                 <p id="biddingStatus" style="font-size: 16px; margin: 10px 0;">Waiting for bidding phase...</p>
-                <div class="bid-buttons">
-                    <button id="bid0" onclick="placeBid(0)" style="background: #335155; color: #fff;" disabled>Pass (0)</button>
-                    <button id="bid1" onclick="placeBid(1)" style="background: #f8cf2c; color: #15141a;" disabled>Bid 1</button>
-                    <button id="bid2" onclick="placeBid(2)" style="background: linear-gradient(135deg, #f8cf2c 0%, #ab202a 50%); color: #fff;" disabled>Bid 2</button>
-                    <button id="bid3" onclick="placeBid(3)" style="background: #ab202a; color: #fff;" disabled>Bid 3</button>
-                </div>
+                <div id="bidButtonsContainer" class="bid-buttons"></div>
             </div>
 
             <!-- Landlord Selection -->
-            <div id="landlordSelectionPanel" class="hidden">
-                <h3>Select Co-Landlord</h3>
-                <p>Choose another player to be co-landlord:</p>
+            <div id="landlordSelectionPanel" class="hidden" style="background: rgba(248, 207, 44, 0.4); padding: 20px; border-radius: 8px; margin-top: 20px; border: 2px solid #f8cf2c;">
+                <h3 style="color: #f8cf2c;">👑 You Are Primary Landlord - Select Co-Landlord</h3>
+                <p style="font-size: 16px; margin: 10px 0;">Choose another player to be your co-landlord:</p>
                 <div id="landlordSelectionButtons" class="landlord-selection"></div>
             </div>
 
@@ -409,8 +435,268 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Rules Modal Overlay -->
+            <div id="rulesModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(21, 20, 26, 0.95); z-index: 2000; display: none; overflow-y: auto; padding: 20px;">
+                <div style="background: linear-gradient(135deg, #335155 0%, #15141a 100%); padding: 40px; border-radius: 20px; border: 3px solid #f8cf2c; max-width: 900px; margin: 0 auto; box-shadow: 0 10px 40px rgba(248, 207, 44, 0.3);">
+                    <h1 style="color: #f8cf2c; font-size: 2.5em; margin-bottom: 20px; text-align: center;">📖 Dou Dizhu Rules</h1>
+
+                    <div style="color: #fff; line-height: 1.8; text-align: left;">
+                        <!-- Basic Rules -->
+                        <section style="margin-bottom: 30px;">
+                            <h2 style="color: #f8cf2c; border-bottom: 2px solid #f8cf2c; padding-bottom: 10px; margin-bottom: 15px;">🎮 Basic Rules</h2>
+                            <p><strong>Dou Dizhu (斗地主)</strong> is a Chinese card game where one team of <strong>Landlords</strong> plays against a team of <strong>Farmers</strong>.</p>
+                            <ul style="margin-left: 20px;">
+                                <li><strong>Goal:</strong> Be the first to empty your hand</li>
+                                <li><strong>Landlords win:</strong> If any landlord empties their hand</li>
+                                <li><strong>Farmers win:</strong> If any farmer empties their hand</li>
+                            </ul>
+                        </section>
+
+                        <!-- Player Configurations -->
+                        <section style="margin-bottom: 30px;">
+                            <h2 style="color: #f8cf2c; border-bottom: 2px solid #f8cf2c; padding-bottom: 10px; margin-bottom: 15px;">👥 Player Configurations</h2>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr style="background: rgba(248, 207, 44, 0.2); border-bottom: 2px solid #f8cf2c;">
+                                    <th style="padding: 8px; text-align: left;">Players</th>
+                                    <th style="padding: 8px;">Decks</th>
+                                    <th style="padding: 8px;">Landlords</th>
+                                    <th style="padding: 8px;">Max Bid</th>
+                                </tr>
+                                <tr style="border-bottom: 1px solid rgba(51, 81, 85, 0.5);"><td style="padding: 8px;">3</td><td style="padding: 8px; text-align: center;">1</td><td style="padding: 8px; text-align: center;">1</td><td style="padding: 8px; text-align: center;">3</td></tr>
+                                <tr style="border-bottom: 1px solid rgba(51, 81, 85, 0.5);"><td style="padding: 8px;">4-6</td><td style="padding: 8px; text-align: center;">2</td><td style="padding: 8px; text-align: center;">1-2</td><td style="padding: 8px; text-align: center;">6</td></tr>
+                                <tr style="border-bottom: 1px solid rgba(51, 81, 85, 0.5);"><td style="padding: 8px;">7</td><td style="padding: 8px; text-align: center;">3</td><td style="padding: 8px; text-align: center;">2</td><td style="padding: 8px; text-align: center;">6</td></tr>
+                                <tr style="border-bottom: 1px solid rgba(51, 81, 85, 0.5);"><td style="padding: 8px;">8</td><td style="padding: 8px; text-align: center;">3</td><td style="padding: 8px; text-align: center;">3</td><td style="padding: 8px; text-align: center;">15</td></tr>
+                                <tr style="border-bottom: 1px solid rgba(51, 81, 85, 0.5);"><td style="padding: 8px;">9-12</td><td style="padding: 8px; text-align: center;">4</td><td style="padding: 8px; text-align: center;">3</td><td style="padding: 8px; text-align: center;">6-7</td></tr>
+                            </table>
+                        </section>
+
+                        <!-- Hand Types -->
+                        <section style="margin-bottom: 30px;">
+                            <h2 style="color: #f8cf2c; border-bottom: 2px solid #f8cf2c; padding-bottom: 10px; margin-bottom: 15px;">🃏 Hand Types</h2>
+                            <p style="margin-bottom: 10px;"><strong>Card Ranking:</strong> 3 &lt; 4 &lt; 5 &lt; 6 &lt; 7 &lt; 8 &lt; 9 &lt; 10 &lt; J &lt; Q &lt; K &lt; A &lt; 2 &lt; Little Joker &lt; Big Joker</p>
+
+                            <div style="margin-bottom: 20px;">
+                                <h3 style="color: #f8cf2c; margin-bottom: 10px;">Basic Combinations</h3>
+                                <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>🎴 Single:</strong> Any single card
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card red">7♥</div>
+                                    </div>
+                                </div>
+
+                                <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>👯 Pair:</strong> Two cards of the same rank
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card black">9♣</div>
+                                        <div class="mini-card red">9♥</div>
+                                    </div>
+                                </div>
+
+                                <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>🎯 Triple:</strong> Three cards of the same rank
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card red">Q♥</div>
+                                        <div class="mini-card black">Q♠</div>
+                                        <div class="mini-card red">Q♦</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <h3 style="color: #f8cf2c; margin-bottom: 10px;">Sequences (Straights)</h3>
+                                <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>📐 Sequence:</strong> 5+ consecutive ranks (2s and Jokers cannot be in sequences)
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card red">5♥</div>
+                                        <div class="mini-card black">6♠</div>
+                                        <div class="mini-card red">7♦</div>
+                                        <div class="mini-card black">8♣</div>
+                                        <div class="mini-card red">9♥</div>
+                                    </div>
+                                </div>
+
+                                <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>👯📐 Pair Sequence:</strong> 3+ consecutive pairs
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card red">4♥</div>
+                                        <div class="mini-card black">4♣</div>
+                                        <div class="mini-card red">5♦</div>
+                                        <div class="mini-card black">5♠</div>
+                                        <div class="mini-card red">6♥</div>
+                                        <div class="mini-card black">6♣</div>
+                                    </div>
+                                </div>
+
+                                <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>✈️ Airplane:</strong> 2+ consecutive triples
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card red">7♥</div>
+                                        <div class="mini-card black">7♠</div>
+                                        <div class="mini-card red">7♦</div>
+                                        <div class="mini-card black">8♣</div>
+                                        <div class="mini-card red">8♥</div>
+                                        <div class="mini-card black">8♠</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <h3 style="color: #f8cf2c; margin-bottom: 10px;">Combinations with Kickers</h3>
+                                <p style="font-size: 14px; color: #f8cf2c; margin-bottom: 10px;">⚠️ <strong>Important:</strong> Kicker rules vary by player count!</p>
+
+                                <div style="background: rgba(171, 32, 42, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #ab202a;">
+                                    <strong>3-4 Players:</strong> Single OR pair kickers allowed<br>
+                                    <strong>5+ Players:</strong> Only PAIR kickers allowed (single kickers rejected)
+                                </div>
+
+                                <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>Triple + Kicker:</strong> Triple with single (3-4p) or pair (all)
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card red">K♥</div>
+                                        <div class="mini-card black">K♠</div>
+                                        <div class="mini-card red">K♦</div>
+                                        <div class="mini-card black">3♣</div>
+                                        <div class="mini-card red">3♥</div>
+                                        <div style="margin-left: 5px; color: #ccc; font-size: 12px;">← Triple K + Pair 3</div>
+                                    </div>
+                                </div>
+
+                                <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>Airplane + Kickers:</strong> Airplane with equal number of kickers
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card red">5♥</div>
+                                        <div class="mini-card black">5♠</div>
+                                        <div class="mini-card red">5♦</div>
+                                        <div class="mini-card black">6♣</div>
+                                        <div class="mini-card red">6♥</div>
+                                        <div class="mini-card black">6♠</div>
+                                        <div class="mini-card red">3♦</div>
+                                        <div class="mini-card black">3♣</div>
+                                        <div class="mini-card red">4♥</div>
+                                        <div class="mini-card black">4♠</div>
+                                        <div style="margin-left: 5px; color: #ccc; font-size: 12px;">← 2 triples + 2 pairs</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <h3 style="color: #f8cf2c; margin-bottom: 10px;">Special Hands</h3>
+                                <div style="background: rgba(171, 32, 42, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #ab202a;">
+                                    <strong>💣 BOMB:</strong> 4+ cards of the same rank (in multi-deck games: 5, 6, 7, 8+ card bombs possible!)
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card red">A♥</div>
+                                        <div class="mini-card black">A♠</div>
+                                        <div class="mini-card red">A♦</div>
+                                        <div class="mini-card black">A♣</div>
+                                        <div style="margin-left: 5px; color: #ccc; font-size: 12px;">← 4-card bomb</div>
+                                    </div>
+                                    <p style="margin-top: 10px; font-size: 14px;">✅ Pure bombs <strong>DOUBLE</strong> the payout multiplier!</p>
+                                    <p style="font-size: 14px;">📏 Bigger bombs beat smaller bombs (5-card > 4-card), same size compared by rank</p>
+                                </div>
+
+                                <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                    <strong>Bomb + Kickers:</strong> Bomb with 2 singles (3-4p) or 2 pairs (all)
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card red">K♥</div>
+                                        <div class="mini-card black">K♠</div>
+                                        <div class="mini-card red">K♦</div>
+                                        <div class="mini-card black">K♣</div>
+                                        <div class="mini-card red">3♥</div>
+                                        <div class="mini-card black">3♠</div>
+                                        <div class="mini-card red">4♦</div>
+                                        <div class="mini-card black">4♣</div>
+                                        <div style="margin-left: 5px; color: #ccc; font-size: 12px;">← Bomb K + 2 pairs</div>
+                                    </div>
+                                    <p style="margin-top: 10px; font-size: 14px; color: #ab202a;">⚠️ Bombs with kickers do NOT count for multiplier bonus!</p>
+                                </div>
+
+                                <div style="background: rgba(171, 32, 42, 0.3); padding: 15px; border-radius: 8px; border-left: 4px solid #f8cf2c;">
+                                    <strong>🚀 ROCKET:</strong> Both jokers (Little + Big)
+                                    <div class="demo-cards" style="display: flex; gap: 5px; margin-top: 10px;">
+                                        <div class="mini-card joker">🃏</div>
+                                        <div class="mini-card joker">🤡</div>
+                                    </div>
+                                    <p style="margin-top: 10px; font-size: 14px;">✅ Beats everything, including all bombs! Doubles the multiplier!</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Scoring -->
+                        <section style="margin-bottom: 30px;">
+                            <h2 style="color: #f8cf2c; border-bottom: 2px solid #f8cf2c; padding-bottom: 10px; margin-bottom: 15px;">💰 Scoring System</h2>
+                            <p style="margin-bottom: 15px;">Final payout = <strong>Base Bet × 2^(multiplier)</strong></p>
+
+                            <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                                <h3 style="color: #f8cf2c; margin-bottom: 10px;">Multiplier Bonuses</h3>
+                                <ul style="margin-left: 20px;">
+                                    <li><strong>💣 Each pure bomb:</strong> +1 to multiplier (doubles payout)</li>
+                                    <li><strong>🚀 Each rocket:</strong> +1 to multiplier (doubles payout)</li>
+                                    <li><strong>🌸 Spring:</strong> Landlord wins before farmers play ANY cards (+1 multiplier)</li>
+                                    <li><strong>🌸 Anti-spring:</strong> Farmers win before landlord plays ANY cards (+1 multiplier)</li>
+                                </ul>
+                                <p style="margin-top: 10px; color: #ab202a;">⚠️ Bombs with kickers do NOT count for multiplier!</p>
+                            </div>
+
+                            <div style="background: rgba(51, 81, 85, 0.3); padding: 15px; border-radius: 8px;">
+                                <h3 style="color: #f8cf2c; margin-bottom: 10px;">Score Distribution</h3>
+                                <ul style="margin-left: 20px;">
+                                    <li><strong>Landlords win:</strong> Each landlord gains (payout × number of farmers)</li>
+                                    <li><strong>Farmers win:</strong> Each farmer gains (payout × number of landlords)</li>
+                                    <li>Losing team splits the loss equally</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <!-- Game Flow -->
+                        <section style="margin-bottom: 30px;">
+                            <h2 style="color: #f8cf2c; border-bottom: 2px solid #f8cf2c; padding-bottom: 10px; margin-bottom: 15px;">🎯 Game Flow</h2>
+                            <ol style="margin-left: 20px; line-height: 2;">
+                                <li><strong>Bidding:</strong> Players bid 0-3 (or higher based on config). Highest bidder becomes landlord</li>
+                                <li><strong>Landlord Selection:</strong> In games with 2+ landlords, highest bidder selects co-landlords</li>
+                                <li><strong>Bottom Cards:</strong> Reserved cards are added to landlords' hands</li>
+                                <li><strong>Play:</strong> Landlord starts. Players must beat current lead or pass</li>
+                                <li><strong>New Round:</strong> After everyone passes, current lead player starts a new round</li>
+                                <li><strong>Victory:</strong> First player to empty their hand wins for their team</li>
+                            </ol>
+                        </section>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button onclick="closeRulesModal()" style="padding: 15px 40px; font-size: 1.2em; background: #f8cf2c; color: #15141a; border: none; border-radius: 6px; cursor: pointer;">Close</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- CSS for mini card demos -->
+    <style>
+        .mini-card {
+            display: inline-block;
+            background: white;
+            border-radius: 4px;
+            padding: 5px 8px;
+            font-weight: bold;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            min-width: 35px;
+            text-align: center;
+        }
+        .mini-card.red {
+            color: #ab202a;
+        }
+        .mini-card.black {
+            color: #335155;
+        }
+        .mini-card.joker {
+            background: linear-gradient(135deg, #ab202a 0%, #335155 100%);
+            color: #f8cf2c;
+            border-color: #f8cf2c;
+            font-size: 24px;
+            padding: 5px 10px;
+        }
+    </style>
 
     <script>
         let ws = null;
@@ -424,6 +710,8 @@
         let gamesPlayed = 0; // Number of games completed in this lobby
         let gameOverShown = false; // Track if we've shown game over for current game
         let playerNames = {}; // Map playerId to player name
+        let testMode = false; // Track if we're in test mode
+        let allTestPlayerIds = []; // Store all test player IDs for switching
 
         function log(message, type = 'info') {
             const logDiv = document.getElementById('gameLog');
@@ -441,6 +729,87 @@
                 console.log('Server URL initialized from config:', window.DDZ_CONFIG.BACKEND_URL);
             }
         });
+
+        async function quickTest(playerCount) {
+            const serverUrl = document.getElementById('serverUrl').value;
+
+            log(`🧪 Starting ${playerCount}-player quick test...`, 'success');
+
+            try {
+                // Enable test mode
+                testMode = true;
+                allTestPlayerIds = [];
+
+                // Create game with first test player
+                const createResponse = await fetch(`${serverUrl}/api/games`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ playerCount, creatorName: 'Test Player 1' })
+                });
+
+                if (!createResponse.ok) throw new Error('Failed to create game');
+
+                const createData = await createResponse.json();
+                currentGameId = createData.gameId;
+                joinCodeForGame = createData.joinCode;
+                myPlayerId = createData.yourPlayerId;
+                myPlayerName = 'Test Player 1';
+
+                // Store first player ID
+                allTestPlayerIds.push({ id: myPlayerId, name: 'Test Player 1' });
+
+                log(`✅ Game created! Join code: ${joinCodeForGame}`, 'success');
+
+                // Initialize game state
+                gameState = {
+                    phase: createData.phase,
+                    players: createData.players,
+                    currentPlayer: createData.currentPlayer,
+                    myHand: [],
+                    playerCount: createData.playerCount,
+                    maxBid: createData.maxBid
+                };
+
+                // Auto-join remaining players
+                for (let i = 2; i <= playerCount; i++) {
+                    const joinResponse = await fetch(`${serverUrl}/api/games/${currentGameId}/join`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ playerName: `Test Player ${i}` })
+                    });
+
+                    if (joinResponse.ok) {
+                        const joinData = await joinResponse.json();
+                        allTestPlayerIds.push({ id: joinData.yourPlayerId, name: `Test Player ${i}` });
+                        log(`✅ Auto-joined Test Player ${i}`, 'success');
+                    } else {
+                        log(`⚠️ Failed to auto-join Test Player ${i}`, 'error');
+                    }
+
+                    // Small delay between joins
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // Update UI
+                document.getElementById('gameId').textContent = currentGameId;
+                document.getElementById('gameJoinCode').textContent = joinCodeForGame;
+                document.getElementById('myPlayerNameDisplay').textContent = myPlayerName;
+                document.getElementById('gamePhase').textContent = gameState.phase || 'LOBBY';
+
+                // Show and populate player switcher
+                updatePlayerSwitcher();
+                document.getElementById('playerSwitcher').classList.remove('hidden');
+
+                switchToGamePanel();
+                connectWebSocket();
+                updateGameUI();
+
+                log(`🎮 Quick test ready! All ${playerCount} players joined.`, 'success');
+                log(`💡 Use the player switcher to control different players.`, 'success');
+            } catch (error) {
+                log(`❌ Quick test failed: ${error.message}`, 'error');
+            }
+        }
 
         async function createGame() {
             const serverUrl = document.getElementById('serverUrl').value;
@@ -483,7 +852,8 @@
                     players: data.players,
                     currentPlayer: data.currentPlayer,
                     myHand: [],
-                    playerCount: data.playerCount
+                    playerCount: data.playerCount,
+                    maxBid: data.maxBid
                 };
 
                 switchToGamePanel();
@@ -546,7 +916,8 @@
                     players: data.players,
                     currentPlayer: data.currentPlayer,
                     myHand: [],
-                    playerCount: data.playerCount
+                    playerCount: data.playerCount,
+                    maxBid: data.maxBid
                 };
 
                 switchToGamePanel();
@@ -561,7 +932,9 @@
             const serverUrl = document.getElementById('serverUrl').value;
             const wsUrl = serverUrl.replace('http://', 'ws://').replace('https://', 'wss://');
 
-            ws = new WebSocket(`${wsUrl}/ws/game/${currentGameId}?playerId=${myPlayerId}`);
+            // Add testMode parameter if in test mode
+            const testModeParam = testMode ? '&testMode=true' : '';
+            ws = new WebSocket(`${wsUrl}/ws/game/${currentGameId}?playerId=${myPlayerId}${testModeParam}`);
 
             ws.onopen = () => {
                 log('✅ WebSocket connected to game', 'success');
@@ -639,6 +1012,25 @@
             document.getElementById('gameJoinCode').textContent = joinCodeForGame || '-';
             document.getElementById('gamePhase').textContent = gameState.phase || 'UNKNOWN';
 
+            // Show player role if landlords are assigned
+            if (gameState.landlordIds && gameState.landlordIds.length > 0) {
+                const isLandlord = gameState.landlordIds.includes(myPlayerId);
+                const roleBox = document.getElementById('roleBox');
+                const roleSpan = document.getElementById('playerRole');
+                roleBox.style.display = 'block';
+                if (isLandlord) {
+                    roleSpan.textContent = '👑 Landlord';
+                    roleSpan.style.color = '#f8cf2c';
+                    roleSpan.style.fontWeight = 'bold';
+                } else {
+                    roleSpan.textContent = '🌾 Peasant';
+                    roleSpan.style.color = '#fff';
+                    roleSpan.style.fontWeight = 'normal';
+                }
+            } else {
+                document.getElementById('roleBox').style.display = 'none';
+            }
+
             // Update players list
             const playersList = document.getElementById('playersList');
             playersList.innerHTML = '';
@@ -679,7 +1071,9 @@
                     if (isLandlord) li.classList.add('landlord');
                     if (isCurrentTurn) li.classList.add('current-turn');
 
-                    li.textContent = `${player.name} (${player.cardCount} cards)`;
+                    // Show bid info (if bid has been made)
+                    const bidInfo = player.bid !== undefined && player.bid !== null ? ` [Bid: ${player.bid}]` : '';
+                    li.textContent = `${player.name} (${player.cardCount} cards)${bidInfo}`;
                     if (isLandlord) li.textContent += ' 👑';
                     if (isCurrentTurn) li.textContent += ' ←';
                     if (player.id === myPlayerId) li.textContent += ' (You)';
@@ -713,50 +1107,89 @@
                 log(`⏳ Waiting for ${currentPlayerName} to bid...`);
             }
 
+            // Render bid buttons based on maxBid (use default of 3 if not available)
+            const container = document.getElementById('bidButtonsContainer');
+            const maxBid = gameState.maxBid || 3; // Default to 3 if not set
+
+            console.log('💰 MaxBid check:', {
+                maxBidFromState: gameState.maxBid,
+                maxBidUsed: maxBid,
+                currentButtonCount: container.children.length,
+                expectedButtonCount: maxBid + 1,
+                willRerender: container.children.length === 0 || container.children.length !== maxBid + 1
+            });
+
+            // Check if buttons need to be rendered/re-rendered
+            if (container.children.length === 0 || container.children.length !== maxBid + 1) {
+                log(`🎲 Rendering ${maxBid + 1} bid buttons (0-${maxBid})`, 'success');
+                renderBidButtons(maxBid);
+            }
+
             // Bidding panel - always visible, but enable/disable buttons based on turn
             const canBid = gameState.phase === 'BIDDING' && isMyTurn && !gameState.awaitingLandlordSelection;
             console.log('🎲 Bidding panel check:', {
                 phase: gameState.phase,
                 isMyTurn,
                 awaitingLandlordSelection: gameState.awaitingLandlordSelection,
-                canBid
+                canBid,
+                maxBid: gameState.maxBid
             });
 
             // Update bidding panel status and button states
             const biddingStatus = document.getElementById('biddingStatus');
-            const bidButtons = ['bid0', 'bid1', 'bid2', 'bid3'];
 
             if (gameState.phase === 'BIDDING') {
                 if (canBid) {
-                    biddingStatus.textContent = '👉 YOUR TURN - Place your bid (0 = pass, 1-3 = bid value):';
+                    biddingStatus.textContent = `👉 YOUR TURN - Place your bid (0 = pass, 1-${maxBid} = bid value):`;
                     biddingStatus.style.color = '#f8cf2c';
                     biddingStatus.style.fontWeight = 'bold';
-                    bidButtons.forEach(id => document.getElementById(id).disabled = false);
+                    // Enable all bid buttons
+                    Array.from(container.children).forEach(btn => btn.disabled = false);
                     log('💰 BIDDING ENABLED - Place your bid!', 'success');
                 } else if (gameState.awaitingLandlordSelection) {
                     biddingStatus.textContent = '⏳ Waiting for landlord selection...';
                     biddingStatus.style.color = '#fff';
                     biddingStatus.style.fontWeight = 'normal';
-                    bidButtons.forEach(id => document.getElementById(id).disabled = true);
+                    Array.from(container.children).forEach(btn => btn.disabled = true);
                 } else {
                     biddingStatus.textContent = `⏳ Waiting for ${currentPlayerName} to bid...`;
                     biddingStatus.style.color = '#fff';
                     biddingStatus.style.fontWeight = 'normal';
-                    bidButtons.forEach(id => document.getElementById(id).disabled = true);
+                    Array.from(container.children).forEach(btn => btn.disabled = true);
                 }
             } else {
                 biddingStatus.textContent = `Phase: ${gameState.phase || 'UNKNOWN'}`;
                 biddingStatus.style.color = '#335155';
                 biddingStatus.style.fontWeight = 'normal';
-                bidButtons.forEach(id => document.getElementById(id).disabled = true);
+                Array.from(container.children).forEach(btn => btn.disabled = true);
             }
 
             // Landlord selection panel
             const showLandlordSelection = gameState.phase === 'BIDDING' && gameState.awaitingLandlordSelection === myPlayerId;
-            document.getElementById('landlordSelectionPanel').classList.toggle('hidden', !showLandlordSelection);
+
+            console.log('👑 Landlord selection check:', {
+                phase: gameState.phase,
+                awaitingLandlordSelection: gameState.awaitingLandlordSelection,
+                myPlayerId: myPlayerId,
+                showLandlordSelection: showLandlordSelection
+            });
+
             if (showLandlordSelection) {
-                log('👑 SELECT CO-LANDLORD - Choose your partner!', 'success');
+                // Hide bidding panel and show landlord selection
+                document.getElementById('biddingPanel').style.display = 'none';
+                document.getElementById('landlordSelectionPanel').classList.remove('hidden');
+                log('👑 YOU ARE PRIMARY LANDLORD - Select your co-landlord!', 'success');
                 renderLandlordSelection();
+            } else {
+                // Show bidding panel and hide landlord selection
+                document.getElementById('biddingPanel').style.display = 'block';
+                document.getElementById('landlordSelectionPanel').classList.add('hidden');
+            }
+
+            // Log if someone is awaiting landlord selection
+            if (gameState.awaitingLandlordSelection && gameState.awaitingLandlordSelection !== myPlayerId) {
+                const primaryLandlordName = playerNames[gameState.awaitingLandlordSelection] || 'Unknown';
+                log(`👑 ${primaryLandlordName} is selecting co-landlord...`, 'success');
             }
 
             // Play panel - show if in PLAY phase and it's my turn
@@ -837,8 +1270,8 @@
                 return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
             });
 
-            sortedCards.forEach(card => {
-                const cardDiv = createCardElement(card);
+            sortedCards.forEach((card, index) => {
+                const cardDiv = createCardElement(card, true, index);
                 handDiv.appendChild(cardDiv);
             });
         }
@@ -865,12 +1298,12 @@
             return rankMap[rank] || rank;
         }
 
-        function createCardElement(card, selectable = true) {
+        function createCardElement(card, selectable = true, index = null) {
             const cardDiv = document.createElement('div');
             cardDiv.className = 'card';
 
-            // Create unique card key using rank + first letter of suit
-            const cardKey = `${card.rank}${card.suit[0]}`;
+            // Create unique card key using rank + first letter of suit + index (to handle duplicates)
+            const cardKey = index !== null ? `${card.rank}${card.suit[0]}_${index}` : `${card.rank}${card.suit[0]}`;
             if (selectedCards.has(cardKey)) {
                 cardDiv.classList.add('selected');
             }
@@ -943,7 +1376,7 @@
             if (!playedHand || !playedHand.cards || playedHand.cards.length === 0) return;
 
             // Format combo type for display
-            const comboTypeDisplay = formatComboType(playedHand.comboType);
+            const comboTypeDisplay = formatComboType(playedHand.comboType, playedHand.cards);
 
             // Add combo type header
             const header = document.createElement('div');
@@ -958,7 +1391,17 @@
             });
         }
 
-        function formatComboType(comboType) {
+        function formatComboType(comboType, cards = []) {
+            // For bombs in multi-deck games, show the size
+            if (comboType === 'BOMB') {
+                // Count cards to determine bomb size
+                const bombSize = cards.length;
+                if (bombSize > 4) {
+                    return `💣 BOMB (${bombSize} of a kind)!`;
+                }
+                return '💣 BOMB!';
+            }
+
             // Convert enum names to readable format
             const typeMap = {
                 'SINGLE': '🎴 Single',
@@ -974,7 +1417,6 @@
                 'AIRPLANE': '✈️ Airplane',
                 'AIRPLANE_PLUS_SINGLE': '✈️➕ Airplane + Singles',
                 'AIRPLANE_PLUS_PAIR': '✈️➕➕ Airplane + Pairs',
-                'BOMB': '💣 BOMB!',
                 'ROCKET': '🚀 ROCKET!'
             };
             return typeMap[comboType] || comboType;
@@ -986,13 +1428,20 @@
 
             if (!gameState || !gameState.players) return;
 
+            log('👥 Available co-landlord candidates:', 'success');
             gameState.players.forEach(player => {
                 if (player.id === myPlayerId) return; // Can't select yourself
                 if (gameState.landlordIds && gameState.landlordIds.includes(player.id)) return; // Already landlord
 
+                log(`  - ${player.name}`, 'success');
+
                 const btn = document.createElement('button');
-                btn.textContent = player.name;
+                btn.textContent = `Select ${player.name}`;
                 btn.onclick = () => selectLandlord(player.id);
+                btn.style.padding = '15px 30px';
+                btn.style.fontSize = '1.1em';
+                btn.style.background = '#f8cf2c';
+                btn.style.color = '#15141a';
                 container.appendChild(btn);
             });
         }
@@ -1055,6 +1504,100 @@
 
         function closeGameOverOverlay() {
             document.getElementById('gameOverOverlay').style.display = 'none';
+        }
+
+        function showRulesModal() {
+            document.getElementById('rulesModal').style.display = 'block';
+        }
+
+        function closeRulesModal() {
+            document.getElementById('rulesModal').style.display = 'none';
+        }
+
+        function updatePlayerSwitcher() {
+            const select = document.getElementById('controlPlayerSelect');
+            select.innerHTML = '';
+
+            allTestPlayerIds.forEach(player => {
+                const option = document.createElement('option');
+                option.value = player.id;
+                option.textContent = player.name;
+                if (player.id === myPlayerId) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        async function switchControlPlayer() {
+            const newPlayerId = document.getElementById('controlPlayerSelect').value;
+            if (newPlayerId === myPlayerId) return; // Already controlling this player
+
+            const newPlayer = allTestPlayerIds.find(p => p.id === newPlayerId);
+            if (!newPlayer) return;
+
+            log(`🔄 Switching control to ${newPlayer.name}...`, 'success');
+
+            // Close current WebSocket
+            if (ws) {
+                ws.close();
+            }
+
+            // Update current player
+            myPlayerId = newPlayerId;
+            myPlayerName = newPlayer.name;
+            document.getElementById('myPlayerNameDisplay').textContent = myPlayerName;
+
+            // Reconnect WebSocket with new player
+            connectWebSocket();
+
+            // Clear selected cards
+            selectedCards.clear();
+
+            log(`✅ Now controlling ${newPlayer.name}`, 'success');
+        }
+
+        function renderBidButtons(maxBid) {
+            const container = document.getElementById('bidButtonsContainer');
+            container.innerHTML = '';
+
+            // Create Pass (0) button
+            const passBtn = document.createElement('button');
+            passBtn.id = 'bid0';
+            passBtn.onclick = () => placeBid(0);
+            passBtn.style.background = '#335155';
+            passBtn.style.color = '#fff';
+            passBtn.textContent = 'Pass (0)';
+            passBtn.disabled = true;
+            container.appendChild(passBtn);
+
+            // Create bid buttons 1 to maxBid
+            for (let i = 1; i <= maxBid; i++) {
+                const btn = document.createElement('button');
+                btn.id = `bid${i}`;
+                btn.onclick = () => placeBid(i);
+                btn.textContent = `Bid ${i}`;
+                btn.disabled = true;
+
+                // Color gradient based on bid value
+                if (i === 1) {
+                    btn.style.background = '#f8cf2c';
+                    btn.style.color = '#15141a';
+                } else if (i <= maxBid / 2) {
+                    btn.style.background = 'linear-gradient(135deg, #f8cf2c 0%, #ab202a 50%)';
+                    btn.style.color = '#fff';
+                } else {
+                    btn.style.background = '#ab202a';
+                    btn.style.color = '#fff';
+                }
+
+                container.appendChild(btn);
+            }
+
+            // Update grid columns based on number of buttons
+            const totalButtons = maxBid + 1; // +1 for pass button
+            const columns = Math.min(totalButtons, 8); // Max 8 columns
+            container.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
         }
 
         function updateScoreboard() {
@@ -1173,16 +1716,28 @@
                 return;
             }
 
-            const cards = Array.from(selectedCards).map(cardKey => {
-                // Card key format is: rank + first letter of suit (e.g., "3H", "AH", "2D")
-                const rank = cardKey.slice(0, -1);
-                const suitLetter = cardKey.slice(-1);
-                const suitMap = {'H': 'HEARTS', 'D': 'DIAMONDS', 'C': 'CLUBS', 'S': 'SPADES', 'J': 'JOKER'};
+            // Extract card indices from keys (format: rank+suit_index)
+            const indices = Array.from(selectedCards).map(cardKey => {
+                const lastUnderscoreIndex = cardKey.lastIndexOf('_');
+                if (lastUnderscoreIndex > 0) {
+                    return parseInt(cardKey.substring(lastUnderscoreIndex + 1));
+                }
+                return null;
+            }).filter(idx => idx !== null);
 
-                return { rank, suit: suitMap[suitLetter] || 'JOKER' };
+            // Sort cards by Dou Dizhu rank order to get sorted hand
+            const rankOrder = [
+                'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN',
+                'JACK', 'QUEEN', 'KING', 'ACE', 'TWO', 'LITTLE_JOKER', 'BIG_JOKER'
+            ];
+            const sortedHand = [...(gameState.myHand || [])].sort((a, b) => {
+                return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
             });
 
-            log(`🎮 Playing ${cards.length} card(s): ${Array.from(selectedCards).join(', ')}`, 'success');
+            // Get actual card objects using indices from sorted hand
+            const cards = indices.map(idx => sortedHand[idx]);
+
+            log(`🎮 Playing ${cards.length} card(s): ${cards.map(c => `${c.rank}${c.suit[0]}`).join(', ')}`, 'success');
             console.log('Playing cards:', cards);
 
             sendWebSocketMessage({
