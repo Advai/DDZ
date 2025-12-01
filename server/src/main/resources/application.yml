@@ -22,6 +22,12 @@ spring:
   # WebSocket configuration
   websocket:
     allowed-origins: "*"
+  # Enable proxy support for WebSocket
+  servlet:
+    session:
+      cookie:
+        same-site: none
+        secure: true
 
 management:
   endpoints:
