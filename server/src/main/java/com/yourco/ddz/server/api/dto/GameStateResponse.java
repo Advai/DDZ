@@ -12,6 +12,7 @@ public record GameStateResponse(
     String currentPlayer,
     List<CardDto> myHand,
     List<PlayerInfo> players,
+    int playerCount,
     PlayedHandDto currentLead,
     Map<String, Integer> scores,
     Integer bombsPlayed,
@@ -22,7 +23,8 @@ public record GameStateResponse(
     List<String> landlordIds,
     String awaitingLandlordSelection) {
 
-  public static GameStateResponse from(GameState state, UUID requestingPlayerId, int maxBid) {
+  public static GameStateResponse from(
+      GameState state, UUID requestingPlayerId, int maxBid, int maxPlayers) {
     // Convert scores to string keys
     Map<String, Integer> scoresMap =
         state.getScores().entrySet().stream()
@@ -48,6 +50,7 @@ public record GameStateResponse(
         state.currentPlayerId() != null ? state.currentPlayerId().toString() : null,
         state.handOf(requestingPlayerId).stream().map(CardDto::from).toList(),
         state.players().stream().map(p -> PlayerInfo.from(state, p)).toList(),
+        maxPlayers,
         PlayedHandDto.from(state.getCurrentLead()),
         scoresMap,
         state.getBombsPlayed(),

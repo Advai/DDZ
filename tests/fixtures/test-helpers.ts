@@ -150,10 +150,23 @@ export async function elementExists(page: Page, selector: string): Promise<boole
 }
 
 /**
- * Get player count from UI
+ * Get player count from UI in "current/total" format
  */
 export async function getPlayerCount(page: Page): Promise<string> {
-  const count = await page.locator('#playersList li').count();
-  // Return format like "3" (just the count, since there's no total displayed)
-  return count.toString();
+  // Wait for WebSocket sync to ensure gameState is updated
+  await page.waitForTimeout(1500);
+
+  // Get current player count from the list
+  const currentCount = await page.locator('#playersList li').count();
+
+  // Get total player count from the game state in the page context
+  const totalCount = await page.evaluate(() => {
+    // @ts-ignore - gameState is a global variable in the page
+    const state = window.gameState;
+
+    // Backend should always provide playerCount now
+    return state?.playerCount || 0;
+  });
+
+  return `${currentCount}/${totalCount}`;
 }

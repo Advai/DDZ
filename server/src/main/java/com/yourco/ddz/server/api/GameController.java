@@ -31,7 +31,12 @@ public class GameController {
     String joinCode = registry.getJoinCode(instance.gameId());
 
     var response =
-        GameInfo.from(instance.getState(), joinCode, creatorId.toString(), instance.getMaxBid());
+        GameInfo.from(
+            instance.getState(),
+            joinCode,
+            creatorId.toString(),
+            instance.getMaxBid(),
+            instance.maxPlayers());
 
     // Broadcast to any connected WebSocket clients (usually none for new games, but just in case)
     wsHandler.broadcastStateUpdate(
@@ -59,7 +64,12 @@ public class GameController {
 
     String joinCode = registry.getJoinCode(gameId);
     var response =
-        GameInfo.from(instance.getState(), joinCode, playerId.toString(), instance.getMaxBid());
+        GameInfo.from(
+            instance.getState(),
+            joinCode,
+            playerId.toString(),
+            instance.getMaxBid(),
+            instance.maxPlayers());
 
     // Broadcast to all WebSocket clients that a new player joined
     wsHandler.broadcastStateUpdate(gameId, instance, request.playerName() + " joined the game");
@@ -107,7 +117,8 @@ public class GameController {
     instance.loop().tick();
 
     String joinCode = registry.getJoinCode(gameId);
-    var response = GameInfo.from(instance.getState(), joinCode, instance.getMaxBid());
+    var response =
+        GameInfo.from(instance.getState(), joinCode, instance.getMaxBid(), instance.maxPlayers());
 
     // Log the state change
     String action = isRestart ? "restarted" : "started";
@@ -146,7 +157,9 @@ public class GameController {
       return ResponseEntity.badRequest().body("Player not in this game");
     }
 
-    var response = GameStateResponse.from(instance.getState(), playerUUID, instance.getMaxBid());
+    var response =
+        GameStateResponse.from(
+            instance.getState(), playerUUID, instance.getMaxBid(), instance.maxPlayers());
     return ResponseEntity.ok(response);
   }
 
@@ -158,7 +171,8 @@ public class GameController {
       return ResponseEntity.notFound().build();
     }
 
-    var response = GameInfo.from(instance.getState(), joinCode, instance.getMaxBid());
+    var response =
+        GameInfo.from(instance.getState(), joinCode, instance.getMaxBid(), instance.maxPlayers());
     return ResponseEntity.ok(response);
   }
 }
