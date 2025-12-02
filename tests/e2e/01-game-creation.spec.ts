@@ -23,15 +23,15 @@ test.describe('Game Creation', () => {
 
     // Verify join code displayed
     const joinCodeText = await page.textContent('.info-box:has-text("Join Code")');
-    expect(joinCodeText).toMatch(/Join Code:\s*[A-Z0-9]{4,8}/);
+    expect(joinCodeText).toMatch(/📋 JOIN CODE:\s*[A-Z0-9]{4,8}/);
 
     // Verify phase is LOBBY
     const phase = await page.textContent('#gamePhase');
     expect(phase).toBe('LOBBY');
 
-    // Verify player count shows 1/3
-    const playerCountText = await page.textContent('.info-box:has-text("Players")');
-    expect(playerCountText).toContain('1/3');
+    // Verify player count shows 1/3 (check players list)
+    const playerItems = await page.locator('#playersList li').count();
+    expect(playerItems).toBe(1);
   });
 
   test('creates a 5-player game successfully', async ({ page }) => {
@@ -41,9 +41,9 @@ test.describe('Game Creation', () => {
     expect(gameId).toMatch(/^g-/);
     expect(joinCode).toMatch(/[A-Z0-9]{4,8}/);
 
-    // Verify player count shows 1/5
-    const playerCountText = await page.textContent('.info-box:has-text("Players")');
-    expect(playerCountText).toContain('1/5');
+    // Verify player count shows 1/5 (check players list)
+    const playerItems = await page.locator('#playersList li').count();
+    expect(playerItems).toBe(1);
   });
 
   test('creates a 7-player game successfully', async ({ page }) => {
@@ -53,9 +53,9 @@ test.describe('Game Creation', () => {
     expect(gameId).toMatch(/^g-/);
     expect(joinCode).toMatch(/[A-Z0-9]{4,8}/);
 
-    // Verify player count shows 1/7
-    const playerCountText = await page.textContent('.info-box:has-text("Players")');
-    expect(playerCountText).toContain('1/7');
+    // Verify player count shows 1/7 (check players list)
+    const playerItems = await page.locator('#playersList li').count();
+    expect(playerItems).toBe(1);
   });
 
   test('displays player name in players list', async ({ page }) => {

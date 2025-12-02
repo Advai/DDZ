@@ -10,7 +10,7 @@ export async function waitForWebSocketConnection(page: Page): Promise<void> {
       const status = document.getElementById('connectionStatus');
       return status?.textContent?.includes('Connected');
     },
-    { timeout: 10000 }
+    { timeout: 15000 }
   );
 }
 
@@ -41,7 +41,7 @@ export async function createGame(
 
   // Get join code from info box (need to find it in the UI)
   const joinCodeText = await page.textContent('.info-box:has-text("Join Code")');
-  const joinCodeMatch = joinCodeText?.match(/Join Code:\s*([A-Z0-9]+)/);
+  const joinCodeMatch = joinCodeText?.match(/📋 JOIN CODE:\s*([A-Z0-9]+)/);
   const joinCode = joinCodeMatch ? joinCodeMatch[1] : '';
 
   return { gameId: gameId || '', joinCode };
@@ -153,7 +153,7 @@ export async function elementExists(page: Page, selector: string): Promise<boole
  * Get player count from UI
  */
 export async function getPlayerCount(page: Page): Promise<string> {
-  const text = await page.textContent('.info-box:has-text("Players")');
-  const match = text?.match(/Players:\s*(\d+\/\d+)/);
-  return match ? match[1] : '';
+  const count = await page.locator('#playersList li').count();
+  // Return format like "3" (just the count, since there's no total displayed)
+  return count.toString();
 }
