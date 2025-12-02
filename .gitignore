@@ -39,7 +39,6 @@ server/build/
 
 # Node/npm
 node_modules/
-package-lock.json
 
 # Playwright
 playwright-report/
