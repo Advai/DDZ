@@ -1,0 +1,32 @@
+{
+  "name": "ddz",
+  "version": "1.0.0",
+  "description": "A multiplayer card game server and web client for the popular Chinese card game Dou Dizhu.",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report",
+    "test:local": "TEST_URL=http://localhost:8080 playwright test",
+    "test:staging": "TEST_URL=https://ddz-game-staging.fly.dev playwright test",
+    "test:prod": "TEST_URL=https://ddz-game.fly.dev playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/advai/DDZ.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/advai/DDZ/issues"
+  },
+  "homepage": "https://github.com/advai/DDZ#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "typescript": "^5.3.3"
+  }
+}

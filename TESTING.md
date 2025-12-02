@@ -329,12 +329,80 @@ ws.send(JSON.stringify({
 
 ---
 
+## Automated Testing
+
+### E2E Tests (Playwright)
+
+We use Playwright for end-to-end browser testing. Tests are located in `tests/e2e/`.
+
+See [tests/README.md](tests/README.md) for full testing documentation.
+
+**Quick Start**:
+```bash
+npm test
+```
+
+**Test Environments**:
+- Staging: https://ddz-game-staging.fly.dev/ (default)
+- Production: https://ddz-game.fly.dev/ (use `npm run test:prod`)
+- Local: http://localhost:8080 (use `npm run test:local`)
+
+**Available Commands**:
+```bash
+npm test              # Run all E2E tests against staging
+npm run test:headed   # Run with visible browser
+npm run test:debug    # Debug mode
+npm run test:ui       # Interactive UI mode
+npm run test:report   # View last test report
+```
+
+### Backend Integration Tests
+
+Spring Boot integration tests are located in `server/src/test/java/`.
+
+**Quick Start**:
+```bash
+./gradlew :server:test
+```
+
+**Run specific test class**:
+```bash
+./gradlew :server:test --tests GameRegistryTest
+```
+
+**Run all tests**:
+```bash
+./gradlew test
+```
+
+### CI/CD
+
+All tests run automatically on every pull request via GitHub Actions:
+- Backend tests (JUnit): ~2-3 minutes
+- E2E tests (Playwright): ~4-5 minutes
+- Total CI time: ~5-7 minutes (parallel execution)
+
+**Test Coverage**:
+- ✅ WebSocket connection and stability
+- ✅ Multi-client synchronization
+- ✅ Game creation and joining
+- ✅ Bidding phase mechanics
+- ✅ Backend REST API endpoints
+- ✅ Game engine logic (85+ unit tests)
+
+**View CI Results**:
+Visit the "Actions" tab in GitHub to see test results for each PR.
+
+---
+
 ## Next Steps
 
 1. ✅ Run standalone test to verify engine works
 2. ✅ Test REST API endpoints
-3. 🚧 Implement WebSocket handlers (in progress)
-4. 🚧 Build frontend UI
+3. ✅ WebSocket handlers implemented
+4. ✅ Frontend UI built
+5. ✅ Automated E2E testing with Playwright
+6. ✅ CI/CD pipeline configured
 
 ---
 
