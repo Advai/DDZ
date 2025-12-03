@@ -36,3 +36,14 @@ Thumbs.db
 
 engine/build/
 server/build/
+
+# Node/npm
+node_modules/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
+
+# Test artifacts
+*.trace

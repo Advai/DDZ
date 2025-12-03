@@ -88,7 +88,8 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     // Send current game state to the newly connected client
     if (playerId != null) {
       GameStateResponse stateResponse =
-          GameStateResponse.from(game.loop().state(), playerId, game.getMaxBid());
+          GameStateResponse.from(
+              game.loop().state(), playerId, game.getMaxBid(), game.maxPlayers());
       sendMessage(session, new GameUpdateMessage(stateResponse, "Connected to game " + gameId));
     } else {
       sendMessage(session, new GameUpdateMessage(null, "Connected to game " + gameId));
@@ -230,7 +231,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         } else {
           // Send personalized state (with player's hand)
           GameStateResponse stateResponse =
-              GameStateResponse.from(state, playerId, game.getMaxBid());
+              GameStateResponse.from(state, playerId, game.getMaxBid(), game.maxPlayers());
           sendMessage(session, new GameUpdateMessage(stateResponse, message));
         }
       } catch (Exception e) {
@@ -242,6 +243,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
   private void sendMessage(WebSocketSession session, Object message) {
     try {
       String json = objectMapper.writeValueAsString(message);
+      log.info("📤 Sending WebSocket message to session {}: {}", session.getId(), json.substring(0, Math.min(500, json.length())));
       session.sendMessage(new TextMessage(json));
     } catch (IOException e) {
       log.error("Error sending message to session {}", session.getId(), e);

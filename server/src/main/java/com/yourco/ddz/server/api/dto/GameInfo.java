@@ -12,16 +12,17 @@ public record GameInfo(
     String currentPlayer,
     String yourPlayerId,
     int maxBid) {
-  public static GameInfo from(GameState state, String joinCode, int maxBid) {
-    return from(state, joinCode, null, maxBid);
+  public static GameInfo from(GameState state, String joinCode, int maxBid, int maxPlayers) {
+    return from(state, joinCode, null, maxBid, maxPlayers);
   }
 
-  public static GameInfo from(GameState state, String joinCode, String yourPlayerId, int maxBid) {
+  public static GameInfo from(
+      GameState state, String joinCode, String yourPlayerId, int maxBid, int maxPlayers) {
     return new GameInfo(
         state.gameId(),
         joinCode,
         state.players().stream().map(p -> PlayerInfo.from(state, p)).toList(),
-        state.players().size(), // TODO: track max separately for lobby
+        maxPlayers, // Use the actual max player count, not current count
         state.phase().name(),
         state.currentPlayerId() != null ? state.currentPlayerId().toString() : null,
         yourPlayerId,
