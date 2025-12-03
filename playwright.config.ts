@@ -3,8 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
 
-  // Increase timeout in CI due to network latency to staging environment
-  timeout: process.env.CI ? 120 * 1000 : 60 * 1000, // 120s in CI, 60s locally
+  timeout: 60 * 1000, // 60 seconds per test
 
   expect: {
     timeout: 10000 // 10 seconds for assertions

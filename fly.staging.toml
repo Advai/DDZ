@@ -30,12 +30,8 @@ primary_region = "ord"  # Chicago - same as production
     method = "GET"
     path = "/actuator/health"
 
-# VM Resources - using free tier
-# Fly.io free tier: 3 shared-cpu-1x VMs with 256MB RAM each
+# VM Resources - upgraded for Java performance
+# Note: 512MB needed for reliable Spring Boot + WebSocket performance
 [vm]
-  size = "shared-cpu-1x"  # Free tier VM
-  memory = "256mb"        # Minimum for Java app
-
-# You can scale up for better performance:
-# size = "shared-cpu-2x"
-# memory = "512mb"
+  size = "shared-cpu-1x"
+  memory = "512mb"  # Upgraded from 256mb for Java app stability
