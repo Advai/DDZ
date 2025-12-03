@@ -30,12 +30,8 @@ primary_region = "ord"  # Chicago - change to region closest to you
     method = "GET"
     path = "/actuator/health"
 
-# VM Resources - using free tier
-# Fly.io free tier: 3 shared-cpu-1x VMs with 256MB RAM each
+# VM Resources - production sizing for Java Spring Boot + WebSocket
+# Recommended: 1GB for production workloads with headroom for GC and traffic spikes
 [vm]
-  size = "shared-cpu-1x"  # Free tier VM
-  memory = "256mb"        # Minimum for Java app
-
-# You can scale up for better performance:
-# size = "shared-cpu-2x"
-# memory = "512mb"
+  size = "shared-cpu-1x"
+  memory = "1024mb"  # Production: 1GB for Spring Boot + WebSocket + concurrent games
