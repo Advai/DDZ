@@ -1,5 +1,6 @@
 package com.yourco.ddz.server.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yourco.ddz.engine.core.GameState;
 import java.util.List;
 import java.util.Map;
@@ -7,21 +8,21 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public record GameStateResponse(
-    String gameId,
-    String phase,
-    String currentPlayer,
-    List<CardDto> myHand,
-    List<PlayerInfo> players,
-    int playerCount,
-    PlayedHandDto currentLead,
-    Map<String, Integer> scores,
-    Integer bombsPlayed,
-    Integer rocketsPlayed,
-    Integer currentBet,
-    Integer multiplier,
-    Integer maxBid,
-    List<String> landlordIds,
-    String awaitingLandlordSelection) {
+    @JsonProperty("gameId") String gameId,
+    @JsonProperty("phase") String phase,
+    @JsonProperty("currentPlayer") String currentPlayer,
+    @JsonProperty("myHand") List<CardDto> myHand,
+    @JsonProperty("players") List<PlayerInfo> players,
+    @JsonProperty("playerCount") int playerCount,
+    @JsonProperty("currentLead") PlayedHandDto currentLead,
+    @JsonProperty("scores") Map<String, Integer> scores,
+    @JsonProperty("bombsPlayed") Integer bombsPlayed,
+    @JsonProperty("rocketsPlayed") Integer rocketsPlayed,
+    @JsonProperty("currentBet") Integer currentBet,
+    @JsonProperty("multiplier") Integer multiplier,
+    @JsonProperty("maxBid") Integer maxBid,
+    @JsonProperty("landlordIds") List<String> landlordIds,
+    @JsonProperty("awaitingLandlordSelection") String awaitingLandlordSelection) {
 
   public static GameStateResponse from(
       GameState state, UUID requestingPlayerId, int maxBid, int maxPlayers) {
