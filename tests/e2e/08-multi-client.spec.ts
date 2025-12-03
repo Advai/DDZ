@@ -193,9 +193,11 @@ test.describe('Multi-Client Synchronization (CRITICAL)', () => {
   test('WebSocket messages arrive in correct order', async ({ browser }) => {
     const context1 = await browser.newContext();
     const context2 = await browser.newContext();
+    const context3 = await browser.newContext();
 
     const page1 = await context1.newPage();
     const page2 = await context2.newPage();
+    const page3 = await context3.newPage();
 
     const messages1: any[] = [];
     const messages2: any[] = [];
@@ -224,9 +226,13 @@ test.describe('Multi-Client Synchronization (CRITICAL)', () => {
     });
 
     try {
-      // Set up game
+      // Set up game with 3 players
       const { joinCode } = await createGame(page1, 'Alice', 3);
       await joinGame(page2, joinCode, 'Bob');
+      await joinGame(page3, joinCode, 'Carol');
+
+      // Wait for all players to sync
+      await page1.waitForTimeout(1000);
 
       await startGame(page1);
       await waitForPhase(page1, 'BIDDING');
@@ -247,6 +253,7 @@ test.describe('Multi-Client Synchronization (CRITICAL)', () => {
     } finally {
       await context1.close();
       await context2.close();
+      await context3.close();
     }
   });
 
