@@ -193,4 +193,26 @@ public class GameController {
         GameInfo.from(instance.getState(), joinCode, instance.getMaxBid(), instance.maxPlayers());
     return ResponseEntity.ok(response);
   }
+
+  @GetMapping("/users/{userId}/active-game")
+  public ResponseEntity<?> getActiveGame(@PathVariable UUID userId) {
+    var activeGameId = registry.getActiveGameForUser(userId);
+
+    if (activeGameId.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+
+    String gameId = activeGameId.get();
+    var instance = registry.get(gameId);
+
+    if (instance == null) {
+      log.warn("Active game {} for user {} not found in registry", gameId, userId);
+      return ResponseEntity.notFound().build();
+    }
+
+    String joinCode = registry.getJoinCode(gameId);
+    var response =
+        GameInfo.from(instance.getState(), joinCode, instance.getMaxBid(), instance.maxPlayers());
+    return ResponseEntity.ok(response);
+  }
 }

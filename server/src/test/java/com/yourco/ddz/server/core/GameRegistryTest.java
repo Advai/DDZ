@@ -2,18 +2,24 @@ package com.yourco.ddz.server.core;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.yourco.ddz.server.service.GamePersistenceService;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 /** Unit tests for GameRegistry. */
 class GameRegistryTest {
 
   private GameRegistry registry;
 
+  @Mock private GamePersistenceService mockPersistenceService;
+
   @BeforeEach
   void setUp() {
-    registry = new GameRegistry();
+    MockitoAnnotations.openMocks(this);
+    registry = new GameRegistry(mockPersistenceService);
   }
 
   @Test

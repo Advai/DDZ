@@ -85,6 +85,11 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     log.info(
         "WebSocket connected - gameId: {}, playerId: {}, testMode: {}", gameId, playerId, testMode);
 
+    // Check if all players are now connected and resume game if needed
+    if (playerId != null && !testMode) {
+      checkAndResumeGame(game, gameId);
+    }
+
     // Send current game state to the newly connected client
     if (playerId != null) {
       GameStateResponse stateResponse =
@@ -93,6 +98,33 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
       sendMessage(session, new GameUpdateMessage(stateResponse, "Connected to game " + gameId));
     } else {
       sendMessage(session, new GameUpdateMessage(null, "Connected to game " + gameId));
+    }
+  }
+
+  /**
+   * Check if all players are connected and resume game if it was paused.
+   *
+   * @param game The game instance
+   * @param gameId The game ID
+   */
+  private void checkAndResumeGame(GameInstance game, String gameId) {
+    synchronized (game.loop()) {
+      GameState state = game.loop().state();
+
+      // Check if all players are connected
+      boolean allConnected =
+          state.players().stream().allMatch(playerId -> state.isPlayerConnected(playerId));
+
+      if (allConnected) {
+        // Resume the game
+        registry.resumeGame(gameId);
+        registry.updateGame(gameId); // Persist the resumed state
+
+        log.info("All players reconnected - resuming game {}", gameId);
+
+        // Broadcast resume to all players
+        broadcastStateUpdate(gameId, game, "All players connected - game resumed");
+      }
     }
   }
 
@@ -128,6 +160,9 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         game.loop().submit(action);
         game.loop().tick();
       }
+
+      // Persist game state after every action
+      registry.updateGame(gameId);
 
       // Broadcast state update to all players in this game
       broadcastStateUpdate(gameId, game, "Action processed");
@@ -168,8 +203,15 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
           log.info("Player {} disconnected from game {}", playerId, gameId);
 
-          // Handle auto-pass for disconnected player if it's their turn
-          handleDisconnectedPlayerTurn(game, gameId);
+          // Pause the game when any player disconnects
+          registry.pauseGame(gameId);
+          registry.updateGame(gameId); // Persist the paused state
+
+          // Broadcast disconnect to all remaining players
+          broadcastStateUpdate(
+              gameId,
+              game,
+              game.loop().state().getPlayerName(playerId) + " disconnected - game paused");
         }
       } else if (playerId != null && isTestMode) {
         log.info(
@@ -300,102 +342,5 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
       }
     }
     return false;
-  }
-
-  /**
-   * Handles auto-pass/auto-bid for disconnected players during their turn.
-   *
-   * <p>When a player disconnects, this method checks if it's their turn and automatically: - In
-   * BIDDING phase: bids 0 (pass) - In PLAY phase: passes (if allowed), otherwise plays lowest card
-   * - In landlord selection: randomly selects next landlord
-   */
-  private void handleDisconnectedPlayerTurn(GameInstance game, String gameId) {
-    // Skip auto-play in test mode (players switching)
-    if (Boolean.TRUE.equals(gameTestMode.get(gameId))) {
-      log.debug("Skipping auto-play for game {} (test mode enabled)", gameId);
-      return;
-    }
-
-    synchronized (game.loop()) {
-      GameState state = game.loop().state();
-      UUID currentPlayer = state.currentPlayerId();
-
-      // Only auto-play if current player is disconnected
-      if (currentPlayer == null || state.isPlayerConnected(currentPlayer)) {
-        return;
-      }
-
-      log.info("Auto-playing for disconnected player {} in game {}", currentPlayer, gameId);
-
-      try {
-        switch (state.phase()) {
-          case BIDDING -> {
-            // Check if in landlord selection mode
-            if (state.getAwaitingLandlordSelection() != null
-                && state.getAwaitingLandlordSelection().equals(currentPlayer)) {
-              // Auto-select: pick first available player that isn't already a landlord
-              UUID selected =
-                  state.players().stream()
-                      .filter(p -> !state.getSelectedLandlords().contains(p))
-                      .findFirst()
-                      .orElse(null);
-
-              if (selected != null) {
-                PlayerAction action = new PlayerAction(currentPlayer, "SELECT_LANDLORD", selected);
-                game.loop().submit(action);
-                game.loop().tick();
-                log.info(
-                    "Auto-selected landlord {} for disconnected player {}",
-                    selected,
-                    currentPlayer);
-              }
-            } else {
-              // Auto-bid 0 (pass)
-              PlayerAction action = new PlayerAction(currentPlayer, "BID", new Bid(0));
-              game.loop().submit(action);
-              game.loop().tick();
-              log.info("Auto-bid 0 (pass) for disconnected player {}", currentPlayer);
-            }
-          }
-
-          case PLAY -> {
-            // Always auto-pass during play phase
-            PlayerAction action = new PlayerAction(currentPlayer, "PLAY", null);
-            try {
-              game.loop().submit(action);
-              game.loop().tick();
-              log.info("Auto-pass for disconnected player {}", currentPlayer);
-            } catch (IllegalStateException e) {
-              // If pass is not allowed (player is leading), play lowest card
-              List<Card> hand = state.handOf(currentPlayer);
-              if (!hand.isEmpty()) {
-                // Sort by rank and play single lowest card
-                List<Card> sorted = new ArrayList<>(hand);
-                sorted.sort(Comparator.comparing(Card::rank));
-                List<Card> lowestCard = List.of(sorted.get(0));
-
-                PlayerAction playAction = new PlayerAction(currentPlayer, "PLAY", lowestCard);
-                game.loop().submit(playAction);
-                game.loop().tick();
-                log.info(
-                    "Auto-played lowest card {} for disconnected player {}",
-                    lowestCard,
-                    currentPlayer);
-              }
-            }
-          }
-
-          default -> {
-            // No auto-play for other phases
-          }
-        }
-
-        // Broadcast state update after auto-play
-        broadcastStateUpdate(gameId, game, "Disconnected player auto-played");
-
-      } catch (Exception e) {
-        log.error("Error auto-playing for disconnected player {}", currentPlayer, e);
-      }
-    }
   }
 }
