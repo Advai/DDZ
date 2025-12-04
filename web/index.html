@@ -997,11 +997,11 @@
 
         async function joinGame() {
             const serverUrl = document.getElementById('serverUrl').value;
-            const playerName = document.getElementById('playerName').value;
+            const displayName = localStorage.getItem('displayName') || 'Player';
             const joinCode = document.getElementById('joinCode').value.toUpperCase();
 
-            if (!playerName || !joinCode) {
-                alert('Please enter your name and join code');
+            if (!joinCode) {
+                alert('Please enter a join code');
                 return;
             }
 
@@ -1018,7 +1018,7 @@
                 const joinResponse = await fetch(`${serverUrl}/api/games/${currentGameId}/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerName })
+                    body: JSON.stringify({ playerName: displayName })
                 });
 
                 if (!joinResponse.ok) {
@@ -1029,7 +1029,7 @@
                 const data = await joinResponse.json();
                 // Get our player ID from response
                 myPlayerId = data.yourPlayerId;
-                myPlayerName = playerName;
+                myPlayerName = displayName;
 
                 log(`✅ Joined game ${joinCode}!`, 'success');
                 log(`🆔 Your player ID: ${myPlayerId}`);
