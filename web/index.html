@@ -853,13 +853,34 @@
 
             log(`🔄 Rejoining game ${currentGameId}...`, 'success');
 
-            // Update UI
+            // Update UI with basic info
             document.getElementById('gameId').textContent = currentGameId;
             document.getElementById('gameJoinCode').textContent = joinCodeForGame;
             document.getElementById('myPlayerNameDisplay').textContent = myPlayerName;
             document.getElementById('gamePhase').textContent = gameData.phase || 'UNKNOWN';
 
+            // Fetch the full game state with player's hand
+            const serverUrl = document.getElementById('serverUrl')?.value ||
+                              (window.DDZ_CONFIG && window.DDZ_CONFIG.BACKEND_URL) ||
+                              'http://localhost:8080';
+
+            try {
+                const stateResponse = await fetch(`${serverUrl}/api/games/${currentGameId}/state?playerId=${myPlayerId}`);
+                if (stateResponse.ok) {
+                    gameState = await stateResponse.json();
+                    log(`✅ Retrieved game state - Phase: ${gameState.phase}, Cards: ${gameState.myHand?.length || 0}`, 'success');
+                } else {
+                    log(`⚠️ Could not fetch full game state`, 'warning');
+                    // Use the basic game data as fallback
+                    gameState = gameData;
+                }
+            } catch (error) {
+                log(`⚠️ Error fetching game state: ${error.message}`, 'warning');
+                gameState = gameData;
+            }
+
             switchToGamePanel();
+            updateGameUI(); // Update UI with the fetched state
             connectWebSocket();
 
             log(`✅ Reconnected to game!`, 'success');
@@ -868,6 +889,13 @@
         async function quickTest(playerCount) {
             const serverUrl = document.getElementById('serverUrl').value;
             const displayName = localStorage.getItem('displayName') || 'Player 1';
+            const userId = localStorage.getItem('userId');
+
+            if (!userId) {
+                log('❌ User not logged in', 'error');
+                window.location.href = '/login.html';
+                return;
+            }
 
             log(`🧪 Starting ${playerCount}-player quick test...`, 'success');
 
@@ -880,7 +908,7 @@
                 const createResponse = await fetch(`${serverUrl}/api/games`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerCount, creatorName: displayName })
+                    body: JSON.stringify({ playerCount, creatorName: displayName, userId })
                 });
 
                 if (!createResponse.ok) throw new Error('Failed to create game');
@@ -906,12 +934,15 @@
                     maxBid: createData.maxBid
                 };
 
-                // Auto-join remaining players
+                // Auto-join remaining players (with temporary test user IDs)
                 for (let i = 2; i <= playerCount; i++) {
+                    // Generate a temporary test userId for AI players
+                    const testUserId = crypto.randomUUID();
+
                     const joinResponse = await fetch(`${serverUrl}/api/games/${currentGameId}/join`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ playerName: `Test Player ${i}` })
+                        body: JSON.stringify({ playerName: `Test Player ${i}`, userId: testUserId })
                     });
 
                     if (joinResponse.ok) {
@@ -950,13 +981,20 @@
         async function createGame() {
             const serverUrl = document.getElementById('serverUrl').value;
             const displayName = localStorage.getItem('displayName') || 'Player';
+            const userId = localStorage.getItem('userId');
             const playerCount = parseInt(document.getElementById('playerCount').value);
+
+            if (!userId) {
+                log('❌ User not logged in', 'error');
+                window.location.href = '/login.html';
+                return;
+            }
 
             try {
                 const response = await fetch(`${serverUrl}/api/games`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerCount, creatorName: displayName })
+                    body: JSON.stringify({ playerCount, creatorName: displayName, userId })
                 });
 
                 if (!response.ok) throw new Error('Failed to create game');
@@ -998,10 +1036,17 @@
         async function joinGame() {
             const serverUrl = document.getElementById('serverUrl').value;
             const displayName = localStorage.getItem('displayName') || 'Player';
+            const userId = localStorage.getItem('userId');
             const joinCode = document.getElementById('joinCode').value.toUpperCase();
 
             if (!joinCode) {
                 alert('Please enter a join code');
+                return;
+            }
+
+            if (!userId) {
+                log('❌ User not logged in', 'error');
+                window.location.href = '/login.html';
                 return;
             }
 
@@ -1018,7 +1063,7 @@
                 const joinResponse = await fetch(`${serverUrl}/api/games/${currentGameId}/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerName: displayName })
+                    body: JSON.stringify({ playerName: displayName, userId })
                 });
 
                 if (!joinResponse.ok) {
@@ -1216,8 +1261,8 @@
                     const isLandlord = gameState.landlordIds && gameState.landlordIds.includes(player.id);
                     // Note: backend sends 'currentPlayer' not 'currentPlayerId'
                     const isCurrentTurn = player.id === gameState.currentPlayer;
-                    // Check connection status
-                    const isConnected = player.connected !== false; // default to connected if not specified
+                    // Check connection status (backend sends isConnected)
+                    const isConnected = player.isConnected !== false; // default to connected if not specified
 
                     if (isLandlord) li.classList.add('landlord');
                     if (isCurrentTurn) li.classList.add('current-turn');

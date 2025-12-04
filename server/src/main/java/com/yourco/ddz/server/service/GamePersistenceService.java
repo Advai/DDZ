@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yourco.ddz.engine.cards.Card;
 import com.yourco.ddz.engine.core.GameState;
+import com.yourco.ddz.engine.core.PlayedHand;
 import com.yourco.ddz.server.core.GameInstance;
 import com.yourco.ddz.server.persistence.Game;
 import com.yourco.ddz.server.persistence.GameParticipant;
@@ -220,7 +221,7 @@ public class GamePersistenceService {
 
     // Current lead
     if (state.getCurrentLead() != null) {
-      json.set("currentLead", objectMapper.valueToTree(state.getCurrentLead()));
+      json.set("currentLead", serializePlayedHand(state.getCurrentLead()));
     }
     if (state.getCurrentLeadPlayer() != null) {
       json.put("currentLeadPlayer", state.getCurrentLeadPlayer().toString());
@@ -256,6 +257,19 @@ public class GamePersistenceService {
                   return cardNode;
                 })
             .toList());
+  }
+
+  /**
+   * Serialize a PlayedHand to JSON.
+   *
+   * @param hand The played hand
+   * @return JsonNode representation of the played hand
+   */
+  private JsonNode serializePlayedHand(PlayedHand hand) {
+    ObjectNode handNode = objectMapper.createObjectNode();
+    handNode.put("comboType", hand.type().name());
+    handNode.set("cards", serializeCards(hand.cards()));
+    return handNode;
   }
 
   /**

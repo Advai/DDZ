@@ -45,7 +45,9 @@ public class GameController {
   @PostMapping("/games")
   public ResponseEntity<?> createGame(@RequestBody CreateGameRequest request) {
     UUID creatorId = UUID.randomUUID();
-    var instance = registry.createGame(request.playerCount(), request.creatorName(), creatorId);
+    var instance =
+        registry.createGame(
+            request.playerCount(), request.creatorName(), creatorId, request.userId());
     String joinCode = registry.getJoinCode(instance.gameId());
 
     var response =
@@ -80,6 +82,9 @@ public class GameController {
     UUID playerId = UUID.randomUUID();
     instance.getState().addPlayer(playerId, request.playerName());
 
+    // Track userId -> playerId mapping for reconnection
+    registry.addUserMapping(gameId, request.userId(), playerId);
+
     String joinCode = registry.getJoinCode(gameId);
     var response =
         GameInfo.from(
@@ -92,7 +97,12 @@ public class GameController {
     // Broadcast to all WebSocket clients that a new player joined
     wsHandler.broadcastStateUpdate(gameId, instance, request.playerName() + " joined the game");
 
-    log.info("Player {} ({}) joined game {}", request.playerName(), playerId, gameId);
+    log.info(
+        "Player {} ({}) joined game {} with userId {}",
+        request.playerName(),
+        playerId,
+        gameId,
+        request.userId());
 
     return ResponseEntity.ok(response);
   }
