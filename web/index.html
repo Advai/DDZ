@@ -304,8 +304,12 @@
 
         <!-- Connection Setup -->
         <div id="setupPanel" class="panel">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <button onclick="showRulesModal()" style="background: #335155; color: #f8cf2c; width: auto; padding: 12px 30px; display: inline-block;">📖 Game Rules</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <button onclick="showRulesModal()" style="background: #335155; color: #f8cf2c; width: auto; padding: 12px 30px;">📖 Game Rules</button>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="color: #f8cf2c; font-weight: bold;">👤 Logged in as: <span id="loggedInUser"></span></span>
+                    <button onclick="logout()" style="background: #ab202a; color: white; width: auto; padding: 8px 20px;">🚪 Logout</button>
+                </div>
             </div>
 
             <h2>Setup</h2>
@@ -313,11 +317,6 @@
             <div class="form-group">
                 <label>Server URL:</label>
                 <input type="text" id="serverUrl" value="http://localhost:8080" placeholder="http://localhost:8080">
-            </div>
-
-            <div class="form-group">
-                <label>Your Name:</label>
-                <input type="text" id="playerName" placeholder="Enter your name">
             </div>
 
             <h3 style="margin-top: 20px;">🧪 Quick Test (Auto-fill Players)</h3>
@@ -770,6 +769,10 @@
 
             console.log(`Logged in as: ${displayName} (${username})`);
 
+            // Display logged-in user info
+            document.getElementById('loggedInUser').textContent = displayName;
+            myPlayerName = displayName; // Set the player name from login
+
             // Check for active game and offer reconnection
             await checkForActiveGame(userId);
 
@@ -778,6 +781,22 @@
                 console.log('Server URL initialized from config:', window.DDZ_CONFIG.BACKEND_URL);
             }
         });
+
+        function logout() {
+            // Clear all stored credentials
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            localStorage.removeItem('displayName');
+
+            // Close WebSocket if connected
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+
+            // Redirect to login page
+            window.location.href = '/login.html';
+        }
 
         async function checkForActiveGame(userId) {
             const serverUrl = document.getElementById('serverUrl')?.value ||
@@ -848,6 +867,7 @@
 
         async function quickTest(playerCount) {
             const serverUrl = document.getElementById('serverUrl').value;
+            const displayName = localStorage.getItem('displayName') || 'Player 1';
 
             log(`🧪 Starting ${playerCount}-player quick test...`, 'success');
 
@@ -856,11 +876,11 @@
                 testMode = true;
                 allTestPlayerIds = [];
 
-                // Create game with first test player
+                // Create game with logged-in user as Player 1
                 const createResponse = await fetch(`${serverUrl}/api/games`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerCount, creatorName: 'Test Player 1' })
+                    body: JSON.stringify({ playerCount, creatorName: displayName })
                 });
 
                 if (!createResponse.ok) throw new Error('Failed to create game');
@@ -869,10 +889,10 @@
                 currentGameId = createData.gameId;
                 joinCodeForGame = createData.joinCode;
                 myPlayerId = createData.yourPlayerId;
-                myPlayerName = 'Test Player 1';
+                myPlayerName = displayName;
 
-                // Store first player ID
-                allTestPlayerIds.push({ id: myPlayerId, name: 'Test Player 1' });
+                // Store first player ID (logged-in user)
+                allTestPlayerIds.push({ id: myPlayerId, name: displayName });
 
                 log(`✅ Game created! Join code: ${joinCodeForGame}`, 'success');
 
@@ -929,19 +949,14 @@
 
         async function createGame() {
             const serverUrl = document.getElementById('serverUrl').value;
-            const playerName = document.getElementById('playerName').value;
+            const displayName = localStorage.getItem('displayName') || 'Player';
             const playerCount = parseInt(document.getElementById('playerCount').value);
-
-            if (!playerName) {
-                alert('Please enter your name');
-                return;
-            }
 
             try {
                 const response = await fetch(`${serverUrl}/api/games`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerCount, creatorName: playerName })
+                    body: JSON.stringify({ playerCount, creatorName: displayName })
                 });
 
                 if (!response.ok) throw new Error('Failed to create game');
@@ -950,7 +965,7 @@
                 currentGameId = data.gameId;
                 joinCodeForGame = data.joinCode;
                 myPlayerId = data.yourPlayerId;
-                myPlayerName = playerName;
+                myPlayerName = displayName;
 
                 log(`✅ Game created! Join code: ${joinCodeForGame}`, 'success');
                 log(`🆔 Your player ID: ${myPlayerId}`);
