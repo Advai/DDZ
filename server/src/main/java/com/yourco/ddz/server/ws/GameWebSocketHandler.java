@@ -243,7 +243,10 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
   private void sendMessage(WebSocketSession session, Object message) {
     try {
       String json = objectMapper.writeValueAsString(message);
-      log.info("📤 Sending WebSocket message to session {}: {}", session.getId(), json.substring(0, Math.min(500, json.length())));
+      log.info(
+          "📤 Sending WebSocket message to session {}: {}",
+          session.getId(),
+          json.substring(0, Math.min(500, json.length())));
       session.sendMessage(new TextMessage(json));
     } catch (IOException e) {
       log.error("Error sending message to session {}", session.getId(), e);
