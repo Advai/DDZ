@@ -14,6 +14,29 @@ server:
     keep-alive-timeout: 60000
 
 spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/ddz}
+    username: ${DATABASE_USER:ddz}
+    password: ${DATABASE_PASSWORD:ddz}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: true
+    show-sql: false
+
   web:
     resources:
       static-locations: file:./web/,classpath:/static/

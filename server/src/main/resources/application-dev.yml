@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ddz_dev
+    username: ddz_dev
+    password: ddz_dev
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  web:
+    resources:
+      static-locations: file:../web/,classpath:/static/
+
+logging:
+  level:
+    com.yourco.ddz: DEBUG

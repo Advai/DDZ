@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Dou Dizhu (斗地主)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #15141a 0%, #335155 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: rgba(51, 81, 85, 0.4);
+            border-radius: 12px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(248, 207, 44, 0.3);
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #f8cf2c;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #f8cf2c;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(248, 207, 44, 0.3);
+            border-radius: 6px;
+            background: rgba(21, 20, 26, 0.6);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #f8cf2c;
+            background: rgba(21, 20, 26, 0.8);
+            box-shadow: 0 0 0 3px rgba(248, 207, 44, 0.1);
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .help-text {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 6px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #f8cf2c 0%, #e6bd26 100%);
+            color: #15141a;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(248, 207, 44, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            color: #ff6b6b;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .info-box {
+            background: rgba(52, 152, 219, 0.2);
+            border: 1px solid rgba(52, 152, 219, 0.5);
+            color: #5dade2;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 24px;
+            font-size: 0.9em;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #85c1e9;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+
+        .info-box li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>斗地主</h1>
+        <p class="subtitle">Dou Dizhu - Fight the Landlord</p>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Enter your username"
+                    required
+                    minlength="3"
+                    maxlength="50"
+                    pattern="[a-zA-Z0-9_]+"
+                    autocomplete="username"
+                >
+                <div class="help-text">3-50 characters, letters, numbers, and underscores only</div>
+            </div>
+
+            <div class="form-group">
+                <label for="displayName">Display Name</label>
+                <input
+                    type="text"
+                    id="displayName"
+                    name="displayName"
+                    placeholder="Enter your display name"
+                    required
+                    maxlength="100"
+                    autocomplete="name"
+                >
+                <div class="help-text">The name other players will see</div>
+            </div>
+
+            <button type="submit" id="loginButton">Login / Sign Up</button>
+        </form>
+
+        <div class="info-box">
+            <strong>About Usernames:</strong>
+            <ul>
+                <li>Usernames are <strong>globally unique</strong> and used for leaderboard rankings</li>
+                <li>If the username exists, you'll log in as that user</li>
+                <li>If it's new, a new account will be created</li>
+                <li>No password required for this MVP version</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:8080/api'
+            : '/api';
+
+        const loginForm = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const loginButton = document.getElementById('loginButton');
+        const usernameInput = document.getElementById('username');
+        const displayNameInput = document.getElementById('displayName');
+
+        // Auto-fill display name from username
+        usernameInput.addEventListener('input', (e) => {
+            if (!displayNameInput.value || displayNameInput.value === usernameInput.dataset.previousValue) {
+                displayNameInput.value = e.target.value;
+            }
+            usernameInput.dataset.previousValue = e.target.value;
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+
+            const username = usernameInput.value.trim();
+            const displayName = displayNameInput.value.trim();
+
+            if (!username || username.length < 3) {
+                showError('Username must be at least 3 characters');
+                return;
+            }
+
+            if (!displayName) {
+                showError('Display name is required');
+                return;
+            }
+
+            loginButton.disabled = true;
+            loginButton.textContent = 'Logging in...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username.toLowerCase(),
+                        displayName: displayName
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Login failed');
+                }
+
+                const data = await response.json();
+
+                // Store user data in localStorage
+                localStorage.setItem('userId', data.userId);
+                localStorage.setItem('username', data.username);
+                localStorage.setItem('displayName', data.displayName);
+
+                console.log('Login successful:', data);
+
+                // Redirect to main game page
+                window.location.href = '/index.html';
+
+            } catch (error) {
+                console.error('Login error:', error);
+                showError(error.message || 'Failed to login. Please try again.');
+                loginButton.disabled = false;
+                loginButton.textContent = 'Login / Sign Up';
+            }
+        });
+
+        // Check if user is already logged in
+        window.addEventListener('load', () => {
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                console.log('User already logged in, redirecting...');
+                window.location.href = '/index.html';
+            }
+        });
+    </script>
+</body>
+</html>

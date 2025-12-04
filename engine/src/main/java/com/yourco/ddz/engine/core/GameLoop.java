@@ -28,8 +28,14 @@ public final class GameLoop {
   public void tick() {
     while (!inbox.isEmpty() && !rules.isTerminal(state)) {
       var a = inbox.poll();
-      rules.apply(state, a);
-      state.addAction(a);
+      try {
+        rules.apply(state, a);
+        state.addAction(a);
+      } catch (IllegalStateException | IllegalArgumentException e) {
+        // Invalid action - do not add to history, do not modify state
+        // Re-throw so caller can handle (e.g., send error to client)
+        throw e;
+      }
     }
     if (rules.isTerminal(state) && !scored) {
       rules.score(state);

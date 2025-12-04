@@ -267,6 +267,33 @@
             margin-bottom: 15px;
             border: 1px solid rgba(171, 32, 42, 0.5);
         }
+
+        .paused-banner {
+            background: rgba(248, 207, 44, 0.9);
+            color: #15141a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 3px solid #f8cf2c;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .disconnected {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
     </style>
     <!-- Configuration file for backend URL -->
     <script src="config.js"></script>
@@ -277,8 +304,12 @@
 
         <!-- Connection Setup -->
         <div id="setupPanel" class="panel">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <button onclick="showRulesModal()" style="background: #335155; color: #f8cf2c; width: auto; padding: 12px 30px; display: inline-block;">📖 Game Rules</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <button onclick="showRulesModal()" style="background: #335155; color: #f8cf2c; width: auto; padding: 12px 30px;">📖 Game Rules</button>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="color: #f8cf2c; font-weight: bold;">👤 Logged in as: <span id="loggedInUser"></span></span>
+                    <button onclick="logout()" style="background: #ab202a; color: white; width: auto; padding: 8px 20px;">🚪 Logout</button>
+                </div>
             </div>
 
             <h2>Setup</h2>
@@ -286,11 +317,6 @@
             <div class="form-group">
                 <label>Server URL:</label>
                 <input type="text" id="serverUrl" value="http://localhost:8080" placeholder="http://localhost:8080">
-            </div>
-
-            <div class="form-group">
-                <label>Your Name:</label>
-                <input type="text" id="playerName" placeholder="Enter your name">
             </div>
 
             <h3 style="margin-top: 20px;">🧪 Quick Test (Auto-fill Players)</h3>
@@ -339,6 +365,11 @@
             </div>
 
             <div id="connectionStatus" class="status disconnected">Disconnected</div>
+
+            <!-- Paused Game Banner -->
+            <div id="pausedBanner" class="paused-banner hidden">
+                ⏸️ Game Paused - Waiting for all players to reconnect
+            </div>
 
             <h2>Game Info</h2>
             <div class="game-info">
@@ -723,15 +754,148 @@
         }
 
         // Initialize server URL from config when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check if user is logged in
+            const userId = localStorage.getItem('userId');
+            const username = localStorage.getItem('username');
+            const displayName = localStorage.getItem('displayName');
+
+            if (!userId || !username) {
+                // Not logged in, redirect to login page
+                console.log('No user credentials found, redirecting to login');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            console.log(`Logged in as: ${displayName} (${username})`);
+
+            // Display logged-in user info
+            document.getElementById('loggedInUser').textContent = displayName;
+            myPlayerName = displayName; // Set the player name from login
+
+            // Check for active game and offer reconnection
+            await checkForActiveGame(userId);
+
             if (window.DDZ_CONFIG && window.DDZ_CONFIG.BACKEND_URL) {
                 document.getElementById('serverUrl').value = window.DDZ_CONFIG.BACKEND_URL;
                 console.log('Server URL initialized from config:', window.DDZ_CONFIG.BACKEND_URL);
             }
         });
 
+        function logout() {
+            // Clear all stored credentials
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            localStorage.removeItem('displayName');
+
+            // Close WebSocket if connected
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+
+            // Redirect to login page
+            window.location.href = '/login.html';
+        }
+
+        async function checkForActiveGame(userId) {
+            const serverUrl = document.getElementById('serverUrl')?.value ||
+                              (window.DDZ_CONFIG && window.DDZ_CONFIG.BACKEND_URL) ||
+                              'http://localhost:8080';
+
+            try {
+                const response = await fetch(`${serverUrl}/api/users/${userId}/active-game`);
+
+                if (response.ok) {
+                    const gameData = await response.json();
+                    console.log('Active game found:', gameData);
+
+                    // Ask user if they want to rejoin
+                    const rejoin = confirm(
+                        `You have an active game (join code: ${gameData.joinCode}).\n\n` +
+                        `Do you want to rejoin?`
+                    );
+
+                    if (rejoin) {
+                        await rejoinActiveGame(gameData);
+                    }
+                }
+            } catch (error) {
+                console.log('No active game found or error checking:', error);
+            }
+        }
+
+        async function rejoinActiveGame(gameData) {
+            currentGameId = gameData.gameId;
+            joinCodeForGame = gameData.joinCode;
+
+            // Get player info from localStorage
+            const displayName = localStorage.getItem('displayName');
+            myPlayerName = displayName;
+
+            // Find our playerId in the game data
+            // The player list contains objects with id and name
+            const userId = localStorage.getItem('userId');
+
+            // For now, we need to find which playerId belongs to this user
+            // This is a limitation - we'll need to track this better in the future
+            // For MVP, we'll just use the first player with matching name
+            const matchingPlayer = gameData.players?.find(p => p.name === displayName);
+            if (matchingPlayer) {
+                myPlayerId = matchingPlayer.id;
+            } else {
+                // Fallback: use first player (this is not ideal but works for MVP)
+                console.warn('Could not find matching player, using first player');
+                if (gameData.players && gameData.players.length > 0) {
+                    myPlayerId = gameData.players[0].id;
+                }
+            }
+
+            log(`🔄 Rejoining game ${currentGameId}...`, 'success');
+
+            // Update UI with basic info
+            document.getElementById('gameId').textContent = currentGameId;
+            document.getElementById('gameJoinCode').textContent = joinCodeForGame;
+            document.getElementById('myPlayerNameDisplay').textContent = myPlayerName;
+            document.getElementById('gamePhase').textContent = gameData.phase || 'UNKNOWN';
+
+            // Fetch the full game state with player's hand
+            const serverUrl = document.getElementById('serverUrl')?.value ||
+                              (window.DDZ_CONFIG && window.DDZ_CONFIG.BACKEND_URL) ||
+                              'http://localhost:8080';
+
+            try {
+                const stateResponse = await fetch(`${serverUrl}/api/games/${currentGameId}/state?playerId=${myPlayerId}`);
+                if (stateResponse.ok) {
+                    gameState = await stateResponse.json();
+                    log(`✅ Retrieved game state - Phase: ${gameState.phase}, Cards: ${gameState.myHand?.length || 0}`, 'success');
+                } else {
+                    log(`⚠️ Could not fetch full game state`, 'warning');
+                    // Use the basic game data as fallback
+                    gameState = gameData;
+                }
+            } catch (error) {
+                log(`⚠️ Error fetching game state: ${error.message}`, 'warning');
+                gameState = gameData;
+            }
+
+            switchToGamePanel();
+            updateGameUI(); // Update UI with the fetched state
+            connectWebSocket();
+
+            log(`✅ Reconnected to game!`, 'success');
+        }
+
         async function quickTest(playerCount) {
             const serverUrl = document.getElementById('serverUrl').value;
+            const displayName = localStorage.getItem('displayName') || 'Player 1';
+            const userId = localStorage.getItem('userId');
+
+            if (!userId) {
+                log('❌ User not logged in', 'error');
+                window.location.href = '/login.html';
+                return;
+            }
 
             log(`🧪 Starting ${playerCount}-player quick test...`, 'success');
 
@@ -740,11 +904,11 @@
                 testMode = true;
                 allTestPlayerIds = [];
 
-                // Create game with first test player
+                // Create game with logged-in user as Player 1
                 const createResponse = await fetch(`${serverUrl}/api/games`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerCount, creatorName: 'Test Player 1' })
+                    body: JSON.stringify({ playerCount, creatorName: displayName, userId })
                 });
 
                 if (!createResponse.ok) throw new Error('Failed to create game');
@@ -753,10 +917,10 @@
                 currentGameId = createData.gameId;
                 joinCodeForGame = createData.joinCode;
                 myPlayerId = createData.yourPlayerId;
-                myPlayerName = 'Test Player 1';
+                myPlayerName = displayName;
 
-                // Store first player ID
-                allTestPlayerIds.push({ id: myPlayerId, name: 'Test Player 1' });
+                // Store first player ID (logged-in user)
+                allTestPlayerIds.push({ id: myPlayerId, name: displayName });
 
                 log(`✅ Game created! Join code: ${joinCodeForGame}`, 'success');
 
@@ -770,12 +934,15 @@
                     maxBid: createData.maxBid
                 };
 
-                // Auto-join remaining players
+                // Auto-join remaining players (with temporary test user IDs)
                 for (let i = 2; i <= playerCount; i++) {
+                    // Generate a temporary test userId for AI players
+                    const testUserId = crypto.randomUUID();
+
                     const joinResponse = await fetch(`${serverUrl}/api/games/${currentGameId}/join`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ playerName: `Test Player ${i}` })
+                        body: JSON.stringify({ playerName: `Test Player ${i}`, userId: testUserId })
                     });
 
                     if (joinResponse.ok) {
@@ -813,11 +980,13 @@
 
         async function createGame() {
             const serverUrl = document.getElementById('serverUrl').value;
-            const playerName = document.getElementById('playerName').value;
+            const displayName = localStorage.getItem('displayName') || 'Player';
+            const userId = localStorage.getItem('userId');
             const playerCount = parseInt(document.getElementById('playerCount').value);
 
-            if (!playerName) {
-                alert('Please enter your name');
+            if (!userId) {
+                log('❌ User not logged in', 'error');
+                window.location.href = '/login.html';
                 return;
             }
 
@@ -825,7 +994,7 @@
                 const response = await fetch(`${serverUrl}/api/games`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerCount, creatorName: playerName })
+                    body: JSON.stringify({ playerCount, creatorName: displayName, userId })
                 });
 
                 if (!response.ok) throw new Error('Failed to create game');
@@ -834,7 +1003,7 @@
                 currentGameId = data.gameId;
                 joinCodeForGame = data.joinCode;
                 myPlayerId = data.yourPlayerId;
-                myPlayerName = playerName;
+                myPlayerName = displayName;
 
                 log(`✅ Game created! Join code: ${joinCodeForGame}`, 'success');
                 log(`🆔 Your player ID: ${myPlayerId}`);
@@ -866,11 +1035,18 @@
 
         async function joinGame() {
             const serverUrl = document.getElementById('serverUrl').value;
-            const playerName = document.getElementById('playerName').value;
+            const displayName = localStorage.getItem('displayName') || 'Player';
+            const userId = localStorage.getItem('userId');
             const joinCode = document.getElementById('joinCode').value.toUpperCase();
 
-            if (!playerName || !joinCode) {
-                alert('Please enter your name and join code');
+            if (!joinCode) {
+                alert('Please enter a join code');
+                return;
+            }
+
+            if (!userId) {
+                log('❌ User not logged in', 'error');
+                window.location.href = '/login.html';
                 return;
             }
 
@@ -887,7 +1063,7 @@
                 const joinResponse = await fetch(`${serverUrl}/api/games/${currentGameId}/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerName })
+                    body: JSON.stringify({ playerName: displayName, userId })
                 });
 
                 if (!joinResponse.ok) {
@@ -898,7 +1074,7 @@
                 const data = await joinResponse.json();
                 // Get our player ID from response
                 myPlayerId = data.yourPlayerId;
-                myPlayerName = playerName;
+                myPlayerName = displayName;
 
                 log(`✅ Joined game ${joinCode}!`, 'success');
                 log(`🆔 Your player ID: ${myPlayerId}`);
@@ -1017,6 +1193,14 @@
             console.log('🔄 Updating UI with game state:', gameState);
             log(`📋 Phase: ${gameState.phase}, Current Player: ${gameState.currentPlayer}`);
 
+            // Show/hide paused banner
+            const pausedBanner = document.getElementById('pausedBanner');
+            if (gameState.isPaused) {
+                pausedBanner.classList.remove('hidden');
+            } else {
+                pausedBanner.classList.add('hidden');
+            }
+
             // Update game info
             document.getElementById('gameId').textContent = currentGameId || gameState.gameId || '-';
             document.getElementById('gameJoinCode').textContent = joinCodeForGame || '-';
@@ -1077,13 +1261,19 @@
                     const isLandlord = gameState.landlordIds && gameState.landlordIds.includes(player.id);
                     // Note: backend sends 'currentPlayer' not 'currentPlayerId'
                     const isCurrentTurn = player.id === gameState.currentPlayer;
+                    // Check connection status (backend sends isConnected)
+                    const isConnected = player.isConnected !== false; // default to connected if not specified
 
                     if (isLandlord) li.classList.add('landlord');
                     if (isCurrentTurn) li.classList.add('current-turn');
+                    if (!isConnected) li.classList.add('disconnected');
+
+                    // Connection status indicator
+                    const statusIndicator = isConnected ? '🟢' : '🔴';
 
                     // Show bid info (if bid has been made)
                     const bidInfo = player.bid !== undefined && player.bid !== null ? ` [Bid: ${player.bid}]` : '';
-                    li.textContent = `${player.name} (${player.cardCount} cards)${bidInfo}`;
+                    li.textContent = `${statusIndicator} ${player.name} (${player.cardCount} cards)${bidInfo}`;
                     if (isLandlord) li.textContent += ' 👑';
                     if (isCurrentTurn) li.textContent += ' ←';
                     if (player.id === myPlayerId) li.textContent += ' (You)';

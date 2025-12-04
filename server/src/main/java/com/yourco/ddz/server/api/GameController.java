@@ -11,23 +11,43 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/games")
+@RequestMapping("/api")
 @CrossOrigin(origins = "*") // Allow all origins for now (no auth yet)
 public class GameController {
   private static final Logger log = LoggerFactory.getLogger(GameController.class);
 
   private final GameRegistry registry;
   private final com.yourco.ddz.server.ws.GameWebSocketHandler wsHandler;
+  private final com.yourco.ddz.server.service.UserService userService;
 
-  public GameController(GameRegistry r, com.yourco.ddz.server.ws.GameWebSocketHandler ws) {
+  public GameController(
+      GameRegistry r,
+      com.yourco.ddz.server.ws.GameWebSocketHandler ws,
+      com.yourco.ddz.server.service.UserService userService) {
     this.registry = r;
     this.wsHandler = ws;
+    this.userService = userService;
   }
 
-  @PostMapping
+  @PostMapping("/auth/login")
+  public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    try {
+      var user = userService.getOrCreateUser(request.username(), request.displayName());
+      var response = new LoginResponse(user.getUserId(), user.getUsername(), user.getDisplayName());
+      log.info("User logged in: {} ({})", user.getUsername(), user.getUserId());
+      return ResponseEntity.ok(response);
+    } catch (IllegalArgumentException e) {
+      log.warn("Login failed: {}", e.getMessage());
+      return ResponseEntity.badRequest().body(e.getMessage());
+    }
+  }
+
+  @PostMapping("/games")
   public ResponseEntity<?> createGame(@RequestBody CreateGameRequest request) {
     UUID creatorId = UUID.randomUUID();
-    var instance = registry.createGame(request.playerCount(), request.creatorName(), creatorId);
+    var instance =
+        registry.createGame(
+            request.playerCount(), request.creatorName(), creatorId, request.userId());
     String joinCode = registry.getJoinCode(instance.gameId());
 
     var response =
@@ -45,7 +65,7 @@ public class GameController {
     return ResponseEntity.ok(response);
   }
 
-  @PostMapping("/{gameId}/join")
+  @PostMapping("/games/{gameId}/join")
   public ResponseEntity<?> joinGame(
       @PathVariable String gameId, @RequestBody JoinGameRequest request) {
     var instance = registry.get(gameId);
@@ -62,6 +82,9 @@ public class GameController {
     UUID playerId = UUID.randomUUID();
     instance.getState().addPlayer(playerId, request.playerName());
 
+    // Track userId -> playerId mapping for reconnection
+    registry.addUserMapping(gameId, request.userId(), playerId);
+
     String joinCode = registry.getJoinCode(gameId);
     var response =
         GameInfo.from(
@@ -74,12 +97,17 @@ public class GameController {
     // Broadcast to all WebSocket clients that a new player joined
     wsHandler.broadcastStateUpdate(gameId, instance, request.playerName() + " joined the game");
 
-    log.info("Player {} ({}) joined game {}", request.playerName(), playerId, gameId);
+    log.info(
+        "Player {} ({}) joined game {} with userId {}",
+        request.playerName(),
+        playerId,
+        gameId,
+        request.userId());
 
     return ResponseEntity.ok(response);
   }
 
-  @PostMapping("/{gameId}/start")
+  @PostMapping("/games/{gameId}/start")
   public ResponseEntity<?> startGame(@PathVariable String gameId) {
     var instance = registry.get(gameId);
 
@@ -137,7 +165,7 @@ public class GameController {
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/{gameId}/state")
+  @GetMapping("/games/{gameId}/state")
   public ResponseEntity<?> getGameState(
       @PathVariable String gameId, @RequestParam String playerId) {
     var instance = registry.get(gameId);
@@ -163,7 +191,7 @@ public class GameController {
     return ResponseEntity.ok(response);
   }
 
-  @GetMapping("/by-code/{joinCode}")
+  @GetMapping("/games/by-code/{joinCode}")
   public ResponseEntity<?> getGameByJoinCode(@PathVariable String joinCode) {
     var instance = registry.getByJoinCode(joinCode);
 
@@ -171,6 +199,28 @@ public class GameController {
       return ResponseEntity.notFound().build();
     }
 
+    var response =
+        GameInfo.from(instance.getState(), joinCode, instance.getMaxBid(), instance.maxPlayers());
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/users/{userId}/active-game")
+  public ResponseEntity<?> getActiveGame(@PathVariable UUID userId) {
+    var activeGameId = registry.getActiveGameForUser(userId);
+
+    if (activeGameId.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+
+    String gameId = activeGameId.get();
+    var instance = registry.get(gameId);
+
+    if (instance == null) {
+      log.warn("Active game {} for user {} not found in registry", gameId, userId);
+      return ResponseEntity.notFound().build();
+    }
+
+    String joinCode = registry.getJoinCode(gameId);
     var response =
         GameInfo.from(instance.getState(), joinCode, instance.getMaxBid(), instance.maxPlayers());
     return ResponseEntity.ok(response);
