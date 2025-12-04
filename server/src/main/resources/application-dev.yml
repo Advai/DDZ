@@ -7,6 +7,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+  web:
+    resources:
+      static-locations: file:../web/,classpath:/static/
 
 logging:
   level:
