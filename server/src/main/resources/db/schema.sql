@@ -70,3 +70,51 @@ CREATE TABLE IF NOT EXISTS game_results (
 CREATE INDEX IF NOT EXISTS idx_game_results_user ON game_results(user_id);
 CREATE INDEX IF NOT EXISTS idx_game_results_game ON game_results(game_id);
 CREATE INDEX IF NOT EXISTS idx_game_results_completed ON game_results(completed_at);
+
+-- Migration: Add session support (Phase 2)
+-- Add session_id and round_number to games table
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='games' AND column_name='session_id') THEN
+        ALTER TABLE games ADD COLUMN session_id VARCHAR(50);
+        -- Backfill existing data: use game_id as session_id
+        UPDATE games SET session_id = game_id WHERE session_id IS NULL;
+        ALTER TABLE games ALTER COLUMN session_id SET NOT NULL;
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='games' AND column_name='round_number') THEN
+        ALTER TABLE games ADD COLUMN round_number INTEGER DEFAULT 1 NOT NULL;
+    END IF;
+END $$;
+
+-- Add indexes for session queries
+CREATE INDEX IF NOT EXISTS idx_games_session_id ON games(session_id);
+CREATE INDEX IF NOT EXISTS idx_games_session_round ON games(session_id, round_number);
+
+-- Add session_id to game_results table
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='game_results' AND column_name='session_id') THEN
+        ALTER TABLE game_results ADD COLUMN session_id VARCHAR(50);
+        -- Backfill from games table
+        UPDATE game_results gr
+        SET session_id = g.session_id
+        FROM games g
+        WHERE gr.game_id = g.game_id AND gr.session_id IS NULL;
+        -- Set NOT NULL after backfill
+        ALTER TABLE game_results ALTER COLUMN session_id SET NOT NULL;
+    END IF;
+END $$;
+
+-- Add index for session-based leaderboard queries
+CREATE INDEX IF NOT EXISTS idx_game_results_session ON game_results(session_id);
+
+-- Note: The unique_user_game_result constraint remains as-is
+-- It allows one result per user per game_id (round)
+-- Multiple rounds in a session will have different game_ids

@@ -98,6 +98,8 @@ public class DdzRulesLandlordSelection {
 
       int handSizeBefore = s.handOf(landlord).size();
       s.handOf(landlord).addAll(landlordBottomCards);
+      // Track which cards are bottom cards for this landlord
+      s.setLandlordBottomCards(landlord, landlordBottomCards);
       Collections.sort(s.handOf(landlord), Comparator.comparing(Card::rank));
       int handSizeAfter = s.handOf(landlord).size();
 

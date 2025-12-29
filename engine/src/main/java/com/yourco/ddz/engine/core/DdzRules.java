@@ -275,8 +275,11 @@ public final class DdzRules implements Rules {
       if (cmp <= 0) throw new IllegalStateException("Does not beat current lead");
     }
 
-    // Apply play
-    s.handOf(pa.playerId()).removeAll(hand.cards());
+    // Apply play - remove each card individually to avoid removing all duplicates
+    List<Card> playerHand = s.handOf(pa.playerId());
+    for (Card card : hand.cards()) {
+      playerHand.remove(card); // Remove only first occurrence
+    }
     s.setCurrentLead(hand);
     s.setCurrentLeadPlayer(pa.playerId());
     s.setPassesInRow(0);

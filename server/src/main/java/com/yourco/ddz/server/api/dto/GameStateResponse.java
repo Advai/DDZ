@@ -26,6 +26,15 @@ public record GameStateResponse(
 
   public static GameStateResponse from(
       GameState state, UUID requestingPlayerId, int maxBid, int maxPlayers) {
+    return from(state, requestingPlayerId, maxBid, maxPlayers, Map.of());
+  }
+
+  public static GameStateResponse from(
+      GameState state,
+      UUID requestingPlayerId,
+      int maxBid,
+      int maxPlayers,
+      Map<UUID, Integer> seatPositions) {
     // Convert scores to string keys
     Map<String, Integer> scoresMap =
         state.getScores().entrySet().stream()
@@ -50,7 +59,7 @@ public record GameStateResponse(
         state.phase().name(),
         state.currentPlayerId() != null ? state.currentPlayerId().toString() : null,
         state.handOf(requestingPlayerId).stream().map(CardDto::from).toList(),
-        state.players().stream().map(p -> PlayerInfo.from(state, p)).toList(),
+        state.players().stream().map(p -> PlayerInfo.from(state, p, seatPositions.get(p))).toList(),
         maxPlayers,
         PlayedHandDto.from(state.getCurrentLead()),
         scoresMap,

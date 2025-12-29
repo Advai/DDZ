@@ -1,0 +1,259 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #15141a 0%, #335155 100%);
+  color: #fff;
+  min-height: 100vh;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937; /* gray-800 */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151; /* gray-700 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563; /* gray-600 */
+}
+
+/* Modern Button Styles */
+.btn {
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: #f8cf2c;
+  color: #15141a;
+  box-shadow: 0 4px 12px rgba(248, 207, 44, 0.4);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #ffdc4e;
+  box-shadow: 0 8px 20px rgba(248, 207, 44, 0.5);
+}
+
+.btn-secondary {
+  background: #335155;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(51, 81, 85, 0.4);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #3d5f64;
+  box-shadow: 0 8px 20px rgba(51, 81, 85, 0.5);
+}
+
+.btn-danger {
+  background: #ab202a;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(171, 32, 42, 0.4);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #c52636;
+  box-shadow: 0 8px 20px rgba(171, 32, 42, 0.5);
+}
+
+/* Card styles from MVP */
+.card {
+  width: 70px;
+  height: 100px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid #ccc;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.card.selected {
+  transform: translateY(-15px);
+  border-color: #f8cf2c;
+  box-shadow: 0 8px 16px rgba(248, 207, 44, 0.6);
+}
+
+.card.red {
+  color: #ab202a;
+}
+
+.card.black {
+  color: #335155;
+}
+
+.card.joker {
+  background: linear-gradient(135deg, #ab202a 0%, #335155 100%);
+  color: #f8cf2c;
+  border-color: #f8cf2c;
+}
+
+.card .rank {
+  font-size: 24px;
+}
+
+.card .suit {
+  font-size: 20px;
+}
+
+/* Mini card styles for landlord positions */
+.mini-card {
+  width: 40px;
+  height: 56px;
+  background: white;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border: 2px solid #ccc;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.mini-card.red {
+  color: #ab202a;
+}
+
+.mini-card.black {
+  color: #335155;
+}
+
+.mini-card.joker {
+  background: linear-gradient(135deg, #ab202a 0%, #335155 100%);
+  color: #f8cf2c;
+  border-color: #f8cf2c;
+}
+
+.mini-card .rank {
+  font-size: 14px;
+}
+
+.mini-card .suit {
+  font-size: 14px;
+}
+
+/* Turn indicator animation */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(248, 207, 44, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(248, 207, 44, 1);
+  }
+}
+
+.turn-indicator {
+  animation: pulse-glow 1.5s infinite;
+}
+
+/* Landlord card fan container */
+.landlord-cards-fan {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  max-width: 140px;
+  max-height: 120px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Responsive layout for tablets and mobile */
+@media (max-width: 1024px) {
+  div[style*="grid-template-areas"] {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto 1fr auto !important;
+    grid-template-areas:
+      "info"
+      "arena"
+      "hand"
+      "actions" !important;
+  }
+}
+
+/* Responsive scaling for larger monitors */
+.game-table {
+  width: 600px;
+  height: 600px;
+}
+
+@media (min-width: 1400px) {
+  html {
+    font-size: 17px;
+  }
+
+  .game-table {
+    width: 700px !important;
+    height: 700px !important;
+  }
+}
+
+@media (min-width: 1800px) {
+  html {
+    font-size: 18px;
+  }
+
+  .game-table {
+    width: 800px !important;
+    height: 800px !important;
+  }
+}

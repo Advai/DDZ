@@ -3,7 +3,6 @@ package com.yourco.ddz.server.core;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.yourco.ddz.server.service.GamePersistenceService;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -24,8 +23,7 @@ class GameRegistryTest {
 
   @Test
   void testCreateGame() {
-    UUID creatorId = UUID.randomUUID();
-    GameInstance instance = registry.createGame(3, "Alice", creatorId);
+    GameInstance instance = registry.createGame(3);
 
     assertNotNull(instance);
     assertEquals(3, instance.maxPlayers());
@@ -35,8 +33,7 @@ class GameRegistryTest {
 
   @Test
   void testGetGame() {
-    UUID creatorId = UUID.randomUUID();
-    GameInstance created = registry.createGame(3, "Alice", creatorId);
+    GameInstance created = registry.createGame(3);
 
     GameInstance retrieved = registry.get(created.gameId());
     assertNotNull(retrieved);
@@ -51,8 +48,7 @@ class GameRegistryTest {
 
   @Test
   void testGetJoinCode() {
-    UUID creatorId = UUID.randomUUID();
-    GameInstance instance = registry.createGame(3, "Alice", creatorId);
+    GameInstance instance = registry.createGame(3);
 
     String joinCode = registry.getJoinCode(instance.gameId());
     assertNotNull(joinCode);
@@ -61,8 +57,7 @@ class GameRegistryTest {
 
   @Test
   void testGetByJoinCode() {
-    UUID creatorId = UUID.randomUUID();
-    GameInstance created = registry.createGame(3, "Alice", creatorId);
+    GameInstance created = registry.createGame(3);
     String joinCode = registry.getJoinCode(created.gameId());
 
     GameInstance retrieved = registry.getByJoinCode(joinCode);
@@ -80,16 +75,16 @@ class GameRegistryTest {
   void testGetAllGames() {
     assertTrue(registry.getAllGames().isEmpty());
 
-    registry.createGame(3, "Alice", UUID.randomUUID());
-    registry.createGame(5, "Bob", UUID.randomUUID());
+    registry.createGame(3);
+    registry.createGame(5);
 
     assertEquals(2, registry.getAllGames().size());
   }
 
   @Test
   void testMultipleGamesHaveUniqueJoinCodes() {
-    GameInstance game1 = registry.createGame(3, "Alice", UUID.randomUUID());
-    GameInstance game2 = registry.createGame(3, "Bob", UUID.randomUUID());
+    GameInstance game1 = registry.createGame(3);
+    GameInstance game2 = registry.createGame(3);
 
     String code1 = registry.getJoinCode(game1.gameId());
     String code2 = registry.getJoinCode(game2.gameId());

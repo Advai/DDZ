@@ -14,22 +14,13 @@ server:
     keep-alive-timeout: 60000
 
 spring:
-  datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/ddz}
-    username: ${DATABASE_USER:ddz}
-    password: ${DATABASE_PASSWORD:ddz}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+  # Datasource config is handled by DatabaseConfig.java for production
+  # Dev config uses application-dev.yml
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update  # TEMPORARY: Change to 'validate' after first deployment
     properties:
       hibernate:
         jdbc:

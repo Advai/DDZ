@@ -59,10 +59,16 @@ public class GamePersistenceService {
 
     if (game.getGameId() == null) {
       game.setGameId(gameId);
+      game.setSessionId(instance.getSessionId());
+      game.setRoundNumber(instance.getRoundNumber());
       // Generate unique join code (this should come from GameRegistry in reality)
       game.setJoinCode(generateJoinCode(gameId));
       game.setMaxPlayers(instance.maxPlayers());
-      log.info("Created new game record for gameId: {}", gameId);
+      log.info(
+          "Created new game record for gameId: {}, sessionId: {}, round: {}",
+          gameId,
+          instance.getSessionId(),
+          instance.getRoundNumber());
     }
 
     // Update game state
@@ -75,7 +81,8 @@ public class GamePersistenceService {
       log.info("Game {} marked as completed", gameId);
 
       // Save final scores to game_results table
-      saveFinalScores(gameId, state, userIdToPlayerIdMap);
+      String sessionId = instance.getSessionId();
+      saveFinalScores(gameId, sessionId, state, userIdToPlayerIdMap);
     }
 
     gameRepository.save(game);
@@ -276,11 +283,12 @@ public class GamePersistenceService {
    * Save final scores to the game_results table. Only called when game reaches TERMINATED phase.
    *
    * @param gameId The game ID
+   * @param sessionId The session ID
    * @param state The final game state
    * @param userIdToPlayerIdMap Map of userId to playerId
    */
   private void saveFinalScores(
-      String gameId, GameState state, Map<UUID, UUID> userIdToPlayerIdMap) {
+      String gameId, String sessionId, GameState state, Map<UUID, UUID> userIdToPlayerIdMap) {
     Map<UUID, Integer> scores = state.getScores();
 
     if (scores.isEmpty()) {
@@ -318,6 +326,7 @@ public class GamePersistenceService {
 
       GameResult result = new GameResult();
       result.setGameId(gameId);
+      result.setSessionId(sessionId);
       result.setUserId(userId);
       result.setPlayerId(playerId);
       result.setFinalScore(finalScore);
