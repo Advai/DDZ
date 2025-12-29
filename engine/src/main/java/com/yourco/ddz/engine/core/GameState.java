@@ -69,6 +69,14 @@ public final class GameState {
     return bottom == null ? new ArrayList<>() : Collections.unmodifiableList(bottom);
   }
 
+  public void setLandlordBottomCards(UUID landlordId, List<Card> cards) {
+    landlordBottomCards.put(landlordId, new ArrayList<>(cards));
+  }
+
+  public List<Card> getLandlordBottomCards(UUID landlordId) {
+    return landlordBottomCards.getOrDefault(landlordId, new ArrayList<>());
+  }
+
   public void setPlayerBid(UUID playerId, int bid) {
     playerBids.put(playerId, bid);
   }
@@ -192,6 +200,8 @@ public final class GameState {
   private Map<UUID, Integer> playerBids = new HashMap<>(); // Track each player's bid
   private int biddingRoundCount = 0;
   private List<Card> bottom = new ArrayList<>();
+  private Map<UUID, List<Card>> landlordBottomCards =
+      new HashMap<>(); // Track which cards are bottom cards for each landlord
 
   // Landlord selection state (for interactive snake draft)
   private UUID awaitingLandlordSelection = null; // Who needs to pick next landlord
@@ -271,6 +281,7 @@ public final class GameState {
     playerBids.clear();
     biddingRoundCount = 0;
     bottom.clear();
+    landlordBottomCards.clear();
 
     // Clear landlord selection state
     awaitingLandlordSelection = null;
@@ -344,6 +355,9 @@ public final class GameState {
   }
 
   public java.util.UUID currentPlayerId() {
+    if (players.isEmpty()) {
+      return null;
+    }
     return players.get(currentPlayerIndex);
   }
 

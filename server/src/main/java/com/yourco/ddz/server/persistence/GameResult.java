@@ -14,6 +14,9 @@ public class GameResult {
   @Column(name = "game_id", nullable = false, length = 50)
   private String gameId;
 
+  @Column(name = "session_id", nullable = false, length = 50)
+  private String sessionId;
+
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
@@ -44,6 +47,14 @@ public class GameResult {
 
   public void setGameId(String gameId) {
     this.gameId = gameId;
+  }
+
+  public String getSessionId() {
+    return sessionId;
+  }
+
+  public void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
   }
 
   public UUID getUserId() {

@@ -27,6 +27,7 @@
   "homepage": "https://github.com/advai/DDZ#readme",
   "devDependencies": {
     "@playwright/test": "^1.40.0",
+    "@tailwindcss/postcss": "^4.1.18",
     "typescript": "^5.3.3"
   }
 }

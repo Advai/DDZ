@@ -13,6 +13,12 @@ public class Game {
   @Column(name = "game_id", length = 50)
   private String gameId;
 
+  @Column(name = "session_id", nullable = false, length = 50)
+  private String sessionId;
+
+  @Column(name = "round_number", nullable = false)
+  private int roundNumber = 1;
+
   @Column(name = "join_code", unique = true, nullable = false, length = 4)
   private String joinCode;
 
@@ -51,6 +57,22 @@ public class Game {
 
   public void setGameId(String gameId) {
     this.gameId = gameId;
+  }
+
+  public String getSessionId() {
+    return sessionId;
+  }
+
+  public void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
+  }
+
+  public int getRoundNumber() {
+    return roundNumber;
+  }
+
+  public void setRoundNumber(int roundNumber) {
+    this.roundNumber = roundNumber;
   }
 
   public String getJoinCode() {

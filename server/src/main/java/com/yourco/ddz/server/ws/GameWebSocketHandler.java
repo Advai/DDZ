@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yourco.ddz.engine.cards.Card;
 import com.yourco.ddz.engine.core.*;
 import com.yourco.ddz.server.api.dto.GameStateResponse;
+import com.yourco.ddz.server.api.dto.SpectatorGameInfo;
 import com.yourco.ddz.server.core.GameInstance;
 import com.yourco.ddz.server.core.GameRegistry;
 import com.yourco.ddz.server.ws.dto.*;
@@ -24,13 +25,13 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
   private final GameRegistry registry;
   private final ObjectMapper objectMapper;
 
-  // Track sessions per game: gameId -> List of sessions
+  // Track sessions per game session: sessionId -> List of WebSocket sessions
   private final Map<String, List<WebSocketSession>> gameSessions = new ConcurrentHashMap<>();
 
-  // Track player ID per session
+  // Track player ID per WebSocket session
   private final Map<String, UUID> sessionPlayerIds = new ConcurrentHashMap<>();
 
-  // Track test mode per game
+  // Track test mode per game session
   private final Map<String, Boolean> gameTestMode = new ConcurrentHashMap<>();
 
   public GameWebSocketHandler(GameRegistry r, ObjectMapper om) {
@@ -40,21 +41,32 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
   @Override
   public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-    String gameId = extractGameId(session);
-    if (gameId == null) {
+    String identifier = extractSessionId(session);
+    if (identifier == null) {
       session.close(CloseStatus.BAD_DATA);
       return;
     }
 
-    GameInstance game = registry.get(gameId);
+    // Try to get game by sessionId first, then fall back to gameId for backward compat
+    GameInstance game = registry.getBySessionId(identifier);
+    String sessionId = identifier;
+
     if (game == null) {
-      sendError(session, "Game not found: " + gameId);
+      // Fall back to gameId lookup
+      game = registry.get(identifier);
+      if (game != null) {
+        sessionId = game.getSessionId();
+      }
+    }
+
+    if (game == null) {
+      sendError(session, "Game/Session not found: " + identifier);
       session.close(CloseStatus.POLICY_VIOLATION);
       return;
     }
 
-    // Add session to game
-    gameSessions.computeIfAbsent(gameId, k -> new ArrayList<>()).add(session);
+    // Add session to game (keyed by sessionId)
+    gameSessions.computeIfAbsent(sessionId, k -> new ArrayList<>()).add(session);
 
     // Extract playerId from query params
     UUID playerId = extractPlayerId(session);
@@ -70,8 +82,8 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     // Check for test mode parameter
     boolean testMode = extractTestMode(session);
     if (testMode) {
-      gameTestMode.put(gameId, true);
-      log.info("Test mode enabled for game {}", gameId);
+      gameTestMode.put(sessionId, true);
+      log.info("Test mode enabled for session {}", sessionId);
 
       // In test mode, mark ALL players as connected (allows single user to control all)
       synchronized (game.loop()) {
@@ -79,25 +91,37 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
           game.loop().state().setPlayerConnected(pid, true);
         }
       }
-      log.info("Marked all players as connected for test mode in game {}", gameId);
+      log.info("Marked all players as connected for test mode in session {}", sessionId);
     }
 
     log.info(
-        "WebSocket connected - gameId: {}, playerId: {}, testMode: {}", gameId, playerId, testMode);
+        "WebSocket connected - sessionId: {}, playerId: {}, testMode: {}",
+        sessionId,
+        playerId,
+        testMode);
 
     // Check if all players are now connected and resume game if needed
     if (playerId != null && !testMode) {
-      checkAndResumeGame(game, gameId);
+      checkAndResumeGame(game, sessionId);
     }
 
     // Send current game state to the newly connected client
+    String currentGameId = game.getCurrentGameId();
     if (playerId != null) {
       GameStateResponse stateResponse =
           GameStateResponse.from(
-              game.loop().state(), playerId, game.getMaxBid(), game.maxPlayers());
-      sendMessage(session, new GameUpdateMessage(stateResponse, "Connected to game " + gameId));
+              game.loop().state(),
+              playerId,
+              game.getMaxBid(),
+              game.maxPlayers(),
+              registry.getSeatPositions(currentGameId));
+      sendMessage(
+          session, new GameUpdateMessage(stateResponse, "Connected to session " + sessionId));
     } else {
-      sendMessage(session, new GameUpdateMessage(null, "Connected to game " + gameId));
+      // Spectator - send basic game info without personal data
+      SpectatorGameInfo spectatorInfo = createSpectatorGameInfo(game, currentGameId);
+      sendMessage(
+          session, new GameUpdateMessage(spectatorInfo, "Connected to session " + sessionId));
     }
   }
 
@@ -105,9 +129,9 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
    * Check if all players are connected and resume game if it was paused.
    *
    * @param game The game instance
-   * @param gameId The game ID
+   * @param sessionId The session ID
    */
-  private void checkAndResumeGame(GameInstance game, String gameId) {
+  private void checkAndResumeGame(GameInstance game, String sessionId) {
     synchronized (game.loop()) {
       GameState state = game.loop().state();
 
@@ -116,33 +140,46 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
           state.players().stream().allMatch(playerId -> state.isPlayerConnected(playerId));
 
       if (allConnected) {
+        String currentGameId = game.getCurrentGameId();
         // Resume the game
-        registry.resumeGame(gameId);
-        registry.updateGame(gameId); // Persist the resumed state
+        registry.resumeGame(currentGameId);
+        registry.updateGame(currentGameId); // Persist the resumed state
 
-        log.info("All players reconnected - resuming game {}", gameId);
+        log.info(
+            "All players reconnected - resuming session {} (game {})", sessionId, currentGameId);
 
         // Broadcast resume to all players
-        broadcastStateUpdate(gameId, game, "All players connected - game resumed");
+        broadcastStateUpdate(sessionId, game, "All players connected - game resumed");
       }
     }
   }
 
   @Override
   protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-    String gameId = extractGameId(session);
+    String identifier = extractSessionId(session);
     UUID playerId = sessionPlayerIds.get(session.getId());
 
-    if (gameId == null) {
-      sendError(session, "No game ID in connection");
+    if (identifier == null) {
+      sendError(session, "No session/game ID in connection");
       return;
     }
 
-    GameInstance game = registry.get(gameId);
+    // Try sessionId first, fall back to gameId
+    GameInstance game = registry.getBySessionId(identifier);
+    String sessionId = identifier;
     if (game == null) {
-      sendError(session, "Game not found: " + gameId);
+      game = registry.get(identifier);
+      if (game != null) {
+        sessionId = game.getSessionId();
+      }
+    }
+
+    if (game == null) {
+      sendError(session, "Game/Session not found: " + identifier);
       return;
     }
+
+    String currentGameId = game.getCurrentGameId();
 
     try {
       // Parse incoming message
@@ -162,10 +199,10 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
       }
 
       // Persist game state after every action
-      registry.updateGame(gameId);
+      registry.updateGame(currentGameId);
 
-      // Broadcast state update to all players in this game
-      broadcastStateUpdate(gameId, game, "Action processed");
+      // Broadcast state update to all players in this session
+      broadcastStateUpdate(sessionId, game, "Action processed");
 
     } catch (IllegalStateException | IllegalArgumentException e) {
       log.warn("Invalid action from player {}: {}", playerId, e.getMessage());
@@ -178,41 +215,50 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
   @Override
   public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-    String gameId = extractGameId(session);
+    String identifier = extractSessionId(session);
     UUID playerId = sessionPlayerIds.remove(session.getId());
 
-    if (gameId != null) {
-      List<WebSocketSession> sessions = gameSessions.get(gameId);
+    if (identifier != null) {
+      // Try sessionId first, fall back to gameId
+      GameInstance game = registry.getBySessionId(identifier);
+      String sessionId = identifier;
+      if (game == null) {
+        game = registry.get(identifier);
+        if (game != null) {
+          sessionId = game.getSessionId();
+        }
+      }
+
+      List<WebSocketSession> sessions = gameSessions.get(sessionId);
       if (sessions != null) {
         sessions.remove(session);
         if (sessions.isEmpty()) {
-          gameSessions.remove(gameId);
+          gameSessions.remove(sessionId);
         }
       }
 
       // In test mode, don't mark players as disconnected (allows player switching)
-      boolean isTestMode = Boolean.TRUE.equals(gameTestMode.get(gameId));
+      boolean isTestMode = Boolean.TRUE.equals(gameTestMode.get(sessionId));
 
       // Mark player as disconnected in game state (unless in test mode)
-      if (playerId != null && !isTestMode) {
-        GameInstance game = registry.get(gameId);
-        if (game != null) {
-          synchronized (game.loop()) {
-            game.loop().state().setPlayerConnected(playerId, false);
-          }
-
-          log.info("Player {} disconnected from game {}", playerId, gameId);
-
-          // Pause the game when any player disconnects
-          registry.pauseGame(gameId);
-          registry.updateGame(gameId); // Persist the paused state
-
-          // Broadcast disconnect to all remaining players
-          broadcastStateUpdate(
-              gameId,
-              game,
-              game.loop().state().getPlayerName(playerId) + " disconnected - game paused");
+      if (playerId != null && !isTestMode && game != null) {
+        String currentGameId = game.getCurrentGameId();
+        synchronized (game.loop()) {
+          game.loop().state().setPlayerConnected(playerId, false);
         }
+
+        log.info(
+            "Player {} disconnected from session {} (game {})", playerId, sessionId, currentGameId);
+
+        // Pause the game when any player disconnects
+        registry.pauseGame(currentGameId);
+        registry.updateGame(currentGameId); // Persist the paused state
+
+        // Broadcast disconnect to all remaining players
+        broadcastStateUpdate(
+            sessionId,
+            game,
+            game.loop().state().getPlayerName(playerId) + " disconnected - game paused");
       } else if (playerId != null && isTestMode) {
         log.info(
             "Player {} closed connection in test mode (not marking as disconnected)", playerId);
@@ -220,7 +266,10 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     }
 
     log.info(
-        "WebSocket disconnected - gameId: {}, playerId: {}, status: {}", gameId, playerId, status);
+        "WebSocket disconnected - sessionId: {}, playerId: {}, status: {}",
+        identifier,
+        playerId,
+        status);
   }
 
   private GameAction convertToAction(GameActionMessage msg) {
@@ -247,18 +296,23 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
   }
 
   /**
-   * Broadcast game state update to all WebSocket clients connected to this game. This is public so
-   * it can be called from REST controllers when game state changes.
+   * Broadcast game state update to all WebSocket clients connected to this session. This is public
+   * so it can be called from REST controllers when game state changes.
    */
-  public void broadcastStateUpdate(String gameId, GameInstance game, String message) {
-    List<WebSocketSession> sessions = gameSessions.get(gameId);
+  public void broadcastStateUpdate(String sessionId, GameInstance game, String message) {
+    List<WebSocketSession> sessions = gameSessions.get(sessionId);
     if (sessions == null || sessions.isEmpty()) {
-      log.warn("No WebSocket sessions found for game {}, cannot broadcast", gameId);
+      log.warn("No WebSocket sessions found for session {}, cannot broadcast", sessionId);
       return;
     }
 
     GameState state = game.loop().state();
-    log.info("Broadcasting state update to {} sessions for game {}", sessions.size(), gameId);
+    String currentGameId = game.getCurrentGameId();
+    log.info(
+        "Broadcasting state update to {} sessions for session {} (game {})",
+        sessions.size(),
+        sessionId,
+        currentGameId);
 
     for (WebSocketSession session : new ArrayList<>(sessions)) {
       if (!session.isOpen()) {
@@ -268,12 +322,18 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
       try {
         UUID playerId = sessionPlayerIds.get(session.getId());
         if (playerId == null) {
-          // If no player ID, just send minimal state
-          sendMessage(session, new GameUpdateMessage(null, message));
+          // Spectator - send basic game info without personal data
+          SpectatorGameInfo spectatorInfo = createSpectatorGameInfo(game, currentGameId);
+          sendMessage(session, new GameUpdateMessage(spectatorInfo, message));
         } else {
           // Send personalized state (with player's hand)
           GameStateResponse stateResponse =
-              GameStateResponse.from(state, playerId, game.getMaxBid(), game.maxPlayers());
+              GameStateResponse.from(
+                  state,
+                  playerId,
+                  game.getMaxBid(),
+                  game.maxPlayers(),
+                  registry.getSeatPositions(currentGameId));
           sendMessage(session, new GameUpdateMessage(stateResponse, message));
         }
       } catch (Exception e) {
@@ -299,11 +359,32 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     sendMessage(session, new ErrorMessage(error));
   }
 
+  private SpectatorGameInfo createSpectatorGameInfo(GameInstance instance, String gameId) {
+    GameState state = instance.loop().state();
+    var seatPositions = registry.getSeatPositions(gameId);
+
+    return new SpectatorGameInfo(
+        gameId,
+        state.phase().name(),
+        state.players().stream()
+            .map(
+                p ->
+                    new SpectatorGameInfo.BasicPlayerInfo(
+                        p.toString(), state.getPlayerName(p), seatPositions.get(p)))
+            .toList());
+  }
+
   private String extractGameId(WebSocketSession session) {
     URI uri = session.getUri();
     if (uri == null) return null;
     String[] parts = uri.getPath().split("/");
     return parts.length > 0 ? parts[parts.length - 1] : null;
+  }
+
+  private String extractSessionId(WebSocketSession session) {
+    // For now, this is the same as extractGameId since the URL path contains the identifier
+    // After Phase 6, the URL will be /ws/game/{sessionId} instead of /ws/game/{gameId}
+    return extractGameId(session);
   }
 
   private UUID extractPlayerId(WebSocketSession session) {
